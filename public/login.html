@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log In - Just MSKU</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    
+    <style>
+        /* --- TASARIM --- */
+        *{ margin: 0; padding: 0; box-sizing: border-box; font-family: 'Montserrat', sans-serif; }
+        body{ 
+            background: #000; 
+            color: #fff; 
+            display: flex; 
+            flex-direction: column;
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            position: relative;
+        }
+
+        h1 { color: #24caac; margin-bottom: 10px; }
+        p { color: #ccc; margin-bottom: 30px; }
+
+        .container{ 
+            background: #1a1a1a; 
+            width: 380px; 
+            padding: 30px; 
+            border-radius: 10px; 
+            box-shadow: 0px 0px 15px rgba(255,255,255,0.1); 
+            text-align: center; 
+        }
+
+        .title { font-size: 24px; font-weight: 600; margin-bottom: 20px; color: #24caac; }
+
+        .input-box{ width: 100%; margin-bottom: 15px; position: relative; }
+        .input-box input{ width: 100%; padding: 12px; border-radius: 6px; border: none; background: #333; color: #fff; outline: none; }
+
+        .button input{ 
+            width: 100%; background: #24caac; color: #000; font-weight: bold; 
+            cursor: pointer; transition: 0.3s; padding: 12px; border: none; border-radius: 6px;
+        }
+        .button input:hover{ opacity: 0.8; }
+
+        .text, .remember-forgot, .kayit-ol { margin-top: 15px; font-size: 14px; }
+        .remember-forgot { display: flex; justify-content: space-between; align-items: center; }
+        .remember-forgot a, .kayit-ol a { color: #24caac; text-decoration: none; }
+        .kayit-ol a:hover { text-decoration: underline; }
+
+        /* Hata Kutusu */
+        .error-msg {
+            color: #ff4b4b; font-size: 13px; margin-bottom: 15px; display: none;
+            background: rgba(255, 75, 75, 0.1); padding: 10px; border-radius: 5px; border: 1px solid #ff4b4b;
+        }
+
+        /* --- YÜKLENİYOR EKRANI (LOADER) --- */
+        #loadingScreen {
+            display: none; /* Başlangıçta gizli */
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 9999;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loader {
+            border: 5px solid #333;
+            border-top: 5px solid #24caac;
+            border-radius: 50%;
+            width: 50px; height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text { color: #24caac; font-size: 18px; letter-spacing: 1px; }
+    </style>
+</head>
+<body>
+
+    <div id="loadingScreen">
+        <div class="loader"></div>
+        <div class="loading-text">Giriş Başarılı! Yönlendiriliyorsunuz...</div>
+    </div>
+
+    <h1>Just MSKU</h1>
+    <p>If you are student of MSKU, you are special</p>
+    
+    <div class="container">
+        <div class="logo">
+            <img src="#" alt="" style="display:none;"> 
+        </div>
+
+        <form id="loginForm">
+            <div class="title">Log in</div>
+
+            <div class="input-box">
+                <span class="icon"></span>
+                <input type="email" id="email" placeholder="Email Giriniz" required>
+            </div>
+
+            <div class="input-box">
+                <input type="password" id="password" placeholder="Şifrenizi Giriniz" required>
+            </div>
+
+            <div id="errorMessage" class="error-msg"></div>
+
+            <div class="input-box button">
+                <input type="submit" value="Giriş Yap">
+            </div>
+        </form>
+
+        <div class="text">Or</div>
+        <div class="remember-forgot">
+            <label><input type="checkbox" id="rememberMe"> Remember me</label>
+            <a href="password.html">Forgot password</a>
+        </div>
+
+        <div class="kayit-ol">
+            <a href="kayıt.html"><i class="fa fa-id-card"></i> Create An Account</a>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        // API BİLGİLERİN
+        const firebaseConfig = {
+            apiKey: "AIzaSyDLRlyPJvO5tPtnuzNAtO6H0_t7mo_3qoU",
+            authDomain: "justmsku.firebaseapp.com",
+            projectId: "justmsku",
+            storageBucket: "justmsku.firebasestorage.app",
+            messagingSenderId: "424626283802",
+            appId: "1:424626283802:web:83502f1c09cdcf9acd78a3"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        const loginForm = document.getElementById('loginForm');
+        const errorDiv = document.getElementById('errorMessage');
+        const loadingScreen = document.getElementById('loadingScreen');
+        const emailInput = document.getElementById('email');
+        const rememberMeCheckbox = document.getElementById('rememberMe');
+
+        // SAYFA YÜKLENDİĞİNDE: Kayıtlı email varsa getir
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedEmail = localStorage.getItem('justmsku_email');
+            if (savedEmail) {
+                emailInput.value = savedEmail;
+                rememberMeCheckbox.checked = true;
+            }
+        });
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorDiv.style.display = 'none';
+
+            const email = emailInput.value;
+            const password = document.getElementById('password').value;
+            const isRememberChecked = rememberMeCheckbox.checked;
+
+            try {
+                // 1. ADIM: Kalıcılık ayarını yap
+                const persistenceMode = isRememberChecked ? browserLocalPersistence : browserSessionPersistence;
+                await setPersistence(auth, persistenceMode);
+
+                // 2. ADIM: Giriş Yap
+                await signInWithEmailAndPassword(auth, email, password);
+                
+                // 3. ADIM: Beni Hatırla (Sadece Email inputunu doldurmak için)
+                if (isRememberChecked) {
+                    localStorage.setItem('justmsku_email', email);
+                } else {
+                    localStorage.removeItem('justmsku_email');
+                }
+
+                // Giriş başarılıysa YÜKLEME EKRANINI AÇ
+                loadingScreen.style.display = 'flex';
+
+                // 2 Saniye bekle ve Ana Sayfaya git
+                setTimeout(() => {
+                    // DİKKAT: Buraya Yönlendirilecek Sayfanın Adını Yazdım
+                    window.location.href = "pylsmgemini.html"; 
+                }, 2000);
+
+            } catch (error) {
+                console.error("Giriş Hatası:", error);
+                
+                if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+                    showError("E-posta adresi veya şifre yanlış.");
+                } else if (error.code === 'auth/too-many-requests') {
+                    showError("Çok fazla deneme yaptınız. Lütfen biraz bekleyin.");
+                } else if (error.code === 'auth/api-key-not-valid') {
+                    showError("Sistem Hatası: API Anahtarı geçersiz.");
+                } else {
+                    showError("Giriş başarısız: " + error.message);
+                }
+            }
+        });
+
+        function showError(msg) {
+            errorDiv.textContent = msg;
+            errorDiv.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

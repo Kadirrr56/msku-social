@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kullanıcı Profili - Just MSKU</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* --- GENEL AYARLAR --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Montserrat', sans-serif; }
+        body { background-color: #000; color: #fff; min-height: 100vh; display: flex; flex-direction: column; }
+
+        /* HEADER */
+        header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 40px; background: #1a1a1a; border-bottom: 1px solid #333;
+            height: 70px;
+        }
+        header h1 { color: #24caac; font-size: 24px; cursor: pointer; }
+        .back-btn {
+            background: #333; color: white; border: none; padding: 8px 15px; 
+            border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 8px;
+            text-decoration: none; font-size: 14px; transition: 0.3s;
+        }
+        .back-btn:hover { background: #24caac; color: black; }
+
+        /* --- PROFİL ALANI --- */
+        .container { max-width: 800px; margin: 0 auto; width: 90%; padding: 30px 0; }
+
+        .profile-card {
+            background: #1a1a1a; border: 1px solid #333; border-radius: 15px;
+            padding: 30px; display: flex; flex-direction: column; align-items: center;
+            margin-bottom: 30px; position: relative;
+        }
+
+        /* Fotoğraf */
+        .avatar-circle {
+            width: 150px; height: 150px; border-radius: 50%; 
+            object-fit: cover; border: 4px solid #24caac;
+            margin-bottom: 15px;
+        }
+
+        /* İsim & Bio */
+        .user-name { font-size: 24px; font-weight: bold; margin-bottom: 5px; color: #fff; }
+        .user-dept { font-size: 14px; color: #888; margin-bottom: 15px; }
+        .bio-text { color: #ccc; text-align: center; max-width: 500px; line-height: 1.6; margin-bottom: 20px; }
+
+        /* Etkileşim Butonları (Takip Et / Mesaj) */
+        .interaction-btns { display: flex; gap: 15px; margin-bottom: 20px; }
+        .btn-action {
+            padding: 10px 25px; border-radius: 20px; border: none; font-weight: bold; cursor: pointer; transition: 0.3s;
+        }
+        .btn-follow { background: #24caac; color: #000; }
+        .btn-follow:hover { background: #1eb59a; }
+        .btn-msg { background: #333; color: #fff; border: 1px solid #555; }
+        .btn-msg:hover { border-color: #24caac; }
+
+        /* İstatistikler */
+        .stats-bar {
+            display: flex; gap: 40px; padding-top: 20px; border-top: 1px solid #333; width: 100%; justify-content: center;
+        }
+        .stat-item { text-align: center; }
+        .stat-value { font-size: 20px; font-weight: bold; color: #fff; display: block; }
+        .stat-label { font-size: 12px; color: #888; }
+
+        /* GÖNDERİLER */
+        .section-title { color: #24caac; margin-bottom: 20px; padding-left: 10px; border-left: 4px solid #24caac; }
+        .feed-post { background: #1a1a1a; border-radius: 15px; padding: 15px; margin-bottom: 20px; border: 1px solid #333; }
+        .post-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .post-header img { width: 40px; height: 40px; border-radius: 50%; }
+        .post-content { margin-bottom: 15px; line-height: 1.5; font-size: 15px; }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1 onclick="window.location.href='pylsmgemini.html'">Just MSKU</h1>
+        <a href="pylsmgemini.html" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Geri Dön</a>
+    </header>
+
+    <div class="container">
+        
+        <div class="profile-card">
+            <img id="uImg" src="" class="avatar-circle">
+            
+            <div id="uName" class="user-name">Kullanıcı Adı</div>
+            <div id="uDept" class="user-dept">Bölüm Bilgisi</div>
+            
+            <div id="uBio" class="bio-text">Biyografi yükleniyor...</div>
+
+            <div class="interaction-btns">
+                <button class="btn-action btn-follow" onclick="toggleFollow(this)">Takip Ediliyor</button>
+                <button id="msgBtn" class="btn-action btn-msg">Mesaj Gönder</button>
+            </div>
+
+            <div class="stats-bar">
+                <div class="stat-item">
+                    <span id="sPost" class="stat-value">0</span>
+                    <span class="stat-label">Gönderi</span>
+                </div>
+                <div class="stat-item">
+                    <span id="sFollowers" class="stat-value">0</span>
+                    <span class="stat-label">Takipçi</span>
+                </div>
+                <div class="stat-item">
+                    <span id="sFollowing" class="stat-value">0</span>
+                    <span class="stat-label">Takip</span>
+                </div>
+            </div>
+        </div>
+
+        <h3 class="section-title">Paylaşımlar</h3>
+        <div id="userPosts">
+            </div>
+
+    </div>
+
+    <script>
+        // --- SANAL VERİTABANI ---
+        const mockDatabase = {
+            "kaya": {
+                name: "Kaya Pulat",
+                dept: "İnşaat Mühendisliği",
+                img: "https://i.pravatar.cc/150?img=69",
+                bio: "Betonarme candır, gerisi heyecandır. 🏗️ MSKU '25",
+                stats: { post: 15, followers: 432, following: 120 },
+                posts: [
+                    "Statik finali çok zordu, geçen var mı?",
+                    "Kampüs kütüphanesinde kahve otomatı yine bozuk :("
+                ]
+            },
+            "emir": {
+                name: "Emir Ova",
+                dept: "Tıp Fakültesi",
+                img: "https://i.pravatar.cc/150?img=62",
+                bio: "Tıp okumak pişmanlık değildir, uykusuzluktur. 🩺 🚑",
+                stats: { post: 8, followers: 850, following: 300 },
+                posts: [
+                    "Nöbet çıkışı Kötekli havası...",
+                    "Anatomi labında bugün ilginç şeyler öğrendik."
+                ]
+            }
+        };
+
+        // --- SAYFA YÜKLENİNCE ÇALIŞAN KOD ---
+        window.onload = function() {
+            // 1. URL'den 'kisi' parametresini al
+            const params = new URLSearchParams(window.location.search);
+            const userId = params.get('kisi'); // örn: "kaya"
+
+            // 2. Veritabanından veriyi bul
+            const user = mockDatabase[userId];
+
+            if (user) {
+                // 3. Verileri Ekrana Bas
+                document.getElementById('uName').innerText = user.name;
+                document.getElementById('uDept').innerText = user.dept;
+                document.getElementById('uImg').src = user.img;
+                document.getElementById('uBio').innerText = user.bio;
+                
+                document.getElementById('sPost').innerText = user.stats.post;
+                document.getElementById('sFollowers').innerText = user.stats.followers;
+                document.getElementById('sFollowing').innerText = user.stats.following;
+
+                // --- GÜNCELLEME: Mesaj Butonunu Ayarla ---
+                // Butona tıklandığında ana sayfaya git ve 'openChat' parametresi ile kullanıcının ID'sini gönder
+                const msgBtn = document.getElementById('msgBtn');
+                msgBtn.onclick = function() {
+                    window.location.href = `pylsmgemini.html?openChat=${userId}`;
+                };
+
+                // 4. Gönderileri Listele
+                const postsContainer = document.getElementById('userPosts');
+                user.posts.forEach(text => {
+                    const postHTML = `
+                        <div class="feed-post">
+                            <div class="post-header">
+                                <img src="${user.img}">
+                                <div><strong>${user.name}</strong><div style="font-size: 12px; color: #888;">Yakın zamanda</div></div>
+                            </div>
+                            <div class="post-content">${text}</div>
+                        </div>`;
+                    postsContainer.innerHTML += postHTML;
+                });
+
+            } else {
+                document.querySelector('.container').innerHTML = "<h2 style='text-align:center; margin-top:50px;'>Kullanıcı Bulunamadı :(</h2>";
+            }
+        };
+
+        function toggleFollow(btn) {
+            if (btn.innerText === "Takip Ediliyor") {
+                btn.innerText = "Takip Et";
+                btn.style.background = "#333";
+                btn.style.color = "#24caac";
+                btn.style.border = "1px solid #24caac";
+            } else {
+                btn.innerText = "Takip Ediliyor";
+                btn.style.background = "#24caac";
+                btn.style.color = "#000";
+                btn.style.border = "none";
+            }
+        }
+    </script>
+</body>
+</html>

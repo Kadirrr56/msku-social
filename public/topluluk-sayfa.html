@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Topluluk Detayı</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* --- GENEL AYARLAR --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Montserrat', sans-serif; }
+        body { background-color: #000; color: #fff; min-height: 100vh; display: flex; flex-direction: column; }
+        
+        header { display: flex; justify-content: space-between; align-items: center; padding: 15px 40px; background: #1a1a1a; border-bottom: 1px solid #333; height: 70px; }
+        header h1 { color: #24caac; font-size: 24px; cursor: pointer; transition: 0.3s; }
+        header h1:hover { color: #fff; }
+
+        .back-btn { background: #333; color: white; border: none; padding: 8px 15px; border-radius: 20px; text-decoration: none; display: flex; align-items: center; gap: 5px; transition: 0.3s; }
+        .back-btn:hover { background: #24caac; color: black; }
+
+        .container { max-width: 800px; margin: 0 auto; width: 90%; padding: 30px 0; }
+
+        /* BANNER */
+        .comm-banner { background: #1a1a1a; border-radius: 15px; padding: 30px; border: 1px solid #333; margin-bottom: 30px; display: flex; align-items: center; gap: 20px; position: relative; }
+        .comm-icon { width: 80px; height: 80px; border-radius: 15px; object-fit: cover; border: 2px solid #24caac; }
+        .comm-info { flex: 1; }
+        .comm-info h2 { font-size: 24px; margin-bottom: 5px; color: #fff; }
+        .comm-info p { color: #aaa; font-size: 14px; margin-bottom: 10px; }
+        .member-count-badge { font-size: 12px; color: #24caac; background: rgba(36, 202, 172, 0.1); padding: 3px 8px; border-radius: 10px; margin-left: 10px; }
+        
+        .action-row { display: flex; align-items: center; gap: 20px; }
+        .join-btn { background: #24caac; color: #000; border: none; padding: 8px 25px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .join-btn.joined { background: #333; color: #24caac; border: 1px solid #24caac; }
+        
+        .admin-info-box { display: flex; flex-direction: column; font-size: 12px; color: #888; border-left: 1px solid #444; padding-left: 15px; }
+        .admin-label { font-weight: bold; color: #24caac; margin-bottom: 2px; }
+        .admin-name { color: #fff; }
+
+        /* YÖNETİM BUTONU */
+        .admin-settings-btn { position: absolute; top: 20px; right: 20px; background: #333; border: 1px solid #444; color: #fff; padding: 8px 15px; border-radius: 10px; cursor: pointer; font-size: 13px; display: none; }
+        .admin-settings-btn:hover { background: #444; border-color: #24caac; }
+
+        .admin-menu { display: none; position: absolute; top: 60px; right: 20px; background: #222; border: 1px solid #444; border-radius: 8px; width: 160px; z-index: 100; box-shadow: 0 5px 15px rgba(0,0,0,0.5); flex-direction: column; }
+        .admin-menu.active { display: flex; }
+        .admin-menu-item { padding: 10px 15px; color: #ccc; cursor: pointer; font-size: 13px; transition: 0.2s; }
+        .admin-menu-item:hover { background: #333; color: #fff; }
+        .admin-menu-item.danger { color: #ff4b4b; border-top: 1px solid #333; }
+        .admin-menu-item.danger:hover { background: rgba(255, 75, 75, 0.1); }
+
+        /* SEKMELER */
+        .stats-bar { display: flex; gap: 40px; padding-top: 10px; border-top: 1px solid #333; width: 100%; justify-content: center; margin-bottom: 20px;}
+        .stat-item { text-align: center; cursor: pointer; padding: 10px 20px; border-radius: 10px; transition: 0.3s; color: #888; font-weight: bold; }
+        .stat-item:hover { background: #222; color: #fff; }
+        .stat-item.active { background: rgba(36, 202, 172, 0.1); border-bottom: 2px solid #24caac; color: #24caac; }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* GÖNDERİ ALANI */
+        .create-post-box { background: #1a1a1a; padding: 20px; border-radius: 15px; margin-bottom: 20px; border: 1px solid #333; display: none; }
+        .create-post-box textarea { width: 100%; background: #000; border: 1px solid #333; color: #fff; padding: 10px; border-radius: 8px; resize: none; min-height: 60px; margin-bottom: 10px; outline: none; }
+        .post-tools { display: flex; justify-content: space-between; align-items: center; }
+        .media-btn { color: #24caac; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 5px; }
+        .post-btn { background: #24caac; color: #000; border: none; padding: 8px 25px; border-radius: 20px; font-weight: bold; cursor: pointer; }
+        .preview-area { margin-top: 10px; display: none; position: relative; }
+        .preview-area img, .preview-area video { width: 100%; max-height: 300px; border-radius: 10px; border: 1px solid #333; }
+        .remove-media { position: absolute; top: 5px; right: 5px; background: white; border: none; border-radius: 50%; width: 25px; height: 25px; cursor: pointer; color: black; font-weight: bold; }
+
+        /* FEED */
+        .feed-post { background: #1a1a1a; border-radius: 15px; padding: 15px; margin-bottom: 20px; border: 1px solid #333; position: relative; }
+        .post-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+        .user-info-group { display: flex; gap: 10px; align-items: center; }
+        .user-info-group img { width: 40px; height: 40px; border-radius: 50%; }
+        .post-content { line-height: 1.5; color: #ddd; margin-bottom: 15px; }
+        .post-media { width: 100%; border-radius: 10px; margin-top: 5px; border: 1px solid #333; }
+        .post-actions { display: flex; gap: 20px; border-top: 1px solid #333; padding-top: 10px; color: #888; }
+        .action-btn { cursor: pointer; display: flex; align-items: center; gap: 5px; transition: 0.2s; }
+        .action-btn:hover { color: #24caac; }
+        .action-btn.liked { color: #ff4b4b; } .action-btn.liked i { font-weight: 900; }
+
+        .post-options { position: relative; }
+        .options-btn { background: none; border: none; color: #888; cursor: pointer; font-size: 18px; padding: 5px; }
+        .options-menu { display: none; position: absolute; top: 30px; right: 0; background: #222; border: 1px solid #444; border-radius: 8px; width: 150px; z-index: 10; overflow: hidden; flex-direction: column; }
+        .options-menu.active { display: flex; }
+        .option-item { padding: 10px 15px; color: #ccc; font-size: 13px; cursor: pointer; }
+        .option-item:hover { background: #333; color: #fff; }
+        .option-item.danger { color: #ff4b4b; border-top: 1px solid #333; }
+
+        /* YORUMLAR */
+        .comment-section { display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid #333; }
+        .comment-list { margin-bottom: 10px; display: flex; flex-direction: column; gap: 10px; }
+        .single-comment { display: flex; gap: 10px; font-size: 13px; color: #ccc; padding: 5px; position: relative; }
+        .single-comment img { width: 25px; height: 25px; border-radius: 50%; }
+        .comment-input-wrapper { display: flex; gap: 10px; }
+        .comment-input-wrapper input { flex: 1; background: #000; border: 1px solid #333; padding: 8px 15px; border-radius: 20px; color: #fff; outline: none; }
+        .comment-send-btn { background: #24caac; border: none; color: #000; padding: 0 15px; border-radius: 20px; cursor: pointer; font-weight: bold; }
+
+        .user-list-item { display: flex; align-items: center; justify-content: space-between; background: #1a1a1a; padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #333; }
+        .user-list-info { display: flex; align-items: center; gap: 15px; }
+        .user-list-info img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+        .empty-msg { text-align: center; color: #555; padding: 20px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1 id="headerTitle" onclick="window.location.href='pylsmgemini.html'">Just MSKU Topluluklar</h1>
+        <a href="topluluklar.html" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Geri</a>
+    </header>
+
+    <div class="container">
+        
+        <div class="comm-banner">
+            <img id="cImg" src="" class="comm-icon">
+            <div class="comm-info">
+                <h2 id="cName">Yükleniyor... <span id="cMemberCount" class="member-count-badge">0 Üye</span></h2>
+                <p id="cDesc">...</p>
+                
+                <div class="action-row">
+                    <button id="joinBtn" class="join-btn" onclick="toggleJoin()">Topluluğa Katıl</button>
+                    <div class="admin-info-box">
+                        <div class="admin-label">Admin</div>
+                        <div class="admin-name" id="adminNameDisplay">Yükleniyor...</div>
+                    </div>
+                </div>
+            </div>
+
+            <button id="adminManageBtn" class="admin-settings-btn" onclick="toggleAdminMenu()">
+                <i class="fa-solid fa-gear"></i> Yönetim
+            </button>
+
+            <div id="adminMenu" class="admin-menu">
+                <div class="admin-menu-item" onclick="changeAdmin()">
+                    <i class="fa-solid fa-user-pen"></i> Admini Değiştir
+                </div>
+                <div class="admin-menu-item danger" onclick="deleteCommunity()">
+                    <i class="fa-solid fa-trash"></i> Topluluğu Sil
+                </div>
+            </div>
+        </div>
+
+        <div class="stats-bar">
+            <div class="stat-item active" id="tab-posts" onclick="switchTab('posts')">
+                Gönderiler
+            </div>
+            <div class="stat-item" id="tab-members" onclick="switchTab('members')">
+                Üyeler <span id="tabMemberCount">(0)</span>
+            </div>
+        </div>
+
+        <div id="content-posts" class="tab-content active">
+            <div id="adminPostBox" class="create-post-box">
+                <textarea id="postInput" placeholder="Yönetici olarak paylaşım yap..."></textarea>
+                <div id="mediaPreview" class="preview-area"><button class="remove-media" onclick="removeMedia()">X</button></div>
+                <div class="post-tools">
+                    <input type="file" id="mediaInput" hidden accept="image/*, video/*" onchange="previewMedia(this)">
+                    <label for="mediaInput" class="media-btn"><i class="fa-solid fa-photo-film"></i> Fotoğraf/Video</label>
+                    <button class="post-btn" onclick="shareCommPost()">Paylaş</button>
+                </div>
+            </div>
+
+            <div id="memberMsg" style="display:none; text-align:center; color:#888; margin-bottom:20px; font-size:12px;">
+                Bu toplulukta sadece yöneticiler paylaşım yapabilir.
+            </div>
+
+            <div id="feedContainer">
+                <div style="text-align:center; color:#555; padding:20px;">Yükleniyor...</div>
+            </div>
+        </div>
+
+        <div id="content-members" class="tab-content">
+            <div id="membersContainer">
+                <div class="empty-msg">Üyeler yükleniyor...</div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, collection, addDoc, query, where, getDocs, orderBy, onSnapshot, deleteDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDLRlyPJvO5tPtnuzNAtO6H0_t7mo_3qoU",
+            authDomain: "justmsku.firebaseapp.com",
+            projectId: "justmsku",
+            storageBucket: "justmsku.firebasestorage.app",
+            messagingSenderId: "424626283802",
+            appId: "1:424626283802:web:83502f1c09cdcf9acd78a3"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let communityId = null;
+        let currentUser = null;
+        let communityAdminId = null;
+        let isMember = false; 
+        let memberDocId = null; 
+        let currentMediaData = null;
+        let currentMediaType = null;
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                const params = new URLSearchParams(window.location.search);
+                communityId = params.get('id');
+
+                if(communityId) {
+                    await loadCommunityInfo();
+                    checkMembership(); 
+                    loadCommunityPosts();
+                    loadCommunityMembers();
+                } else {
+                    alert("Topluluk bulunamadı.");
+                    window.location.href = "topluluklar.html";
+                }
+            } else {
+                window.location.href = "login.html";
+            }
+        });
+
+        // --- SEKME GEÇİŞİ ---
+        window.switchTab = function(tabName) {
+            document.querySelectorAll('.stat-item').forEach(i => i.classList.remove('active'));
+            document.getElementById('tab-' + tabName).classList.add('active');
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById('content-' + tabName).classList.add('active');
+        }
+
+        // --- 1. TOPLULUK BİLGİSİ ---
+        async function loadCommunityInfo() {
+            const docRef = doc(db, "communities", communityId);
+            onSnapshot(docRef, (snap) => {
+                if(snap.exists()) {
+                    const data = snap.data();
+                    communityAdminId = data.createdBy; 
+                    document.getElementById('cName').innerText = data.name;
+                    document.getElementById('headerTitle').innerText = data.name;
+                    document.getElementById('cDesc').innerText = data.description;
+                    document.getElementById('cImg').src = data.image || "https://via.placeholder.com/150";
+                    document.getElementById('cMemberCount').innerText = `${data.memberCount || 0} Üye`;
+                    document.getElementById('tabMemberCount').innerText = `(${data.memberCount || 0})`;
+
+                    if (communityAdminId) {
+                        getDoc(doc(db, "users", communityAdminId)).then(adminDoc => {
+                            if(adminDoc.exists()) document.getElementById('adminNameDisplay').innerText = adminDoc.data().username;
+                            else document.getElementById('adminNameDisplay').innerText = "Bilinmiyor";
+                        });
+                    } else {
+                        document.getElementById('adminNameDisplay').innerText = "Yok";
+                    }
+
+                    const joinBtn = document.getElementById('joinBtn'); 
+                    if (currentUser.uid === communityAdminId) {
+                        document.getElementById('adminPostBox').style.display = 'block';
+                        document.getElementById('adminManageBtn').style.display = 'block';
+                        joinBtn.style.display = 'none';
+                    } else {
+                        document.getElementById('adminPostBox').style.display = 'none';
+                        document.getElementById('memberMsg').style.display = 'block';
+                        document.getElementById('adminManageBtn').style.display = 'none';
+                        joinBtn.style.display = 'block';
+                    }
+                }
+            });
+        }
+
+        // --- 2. ÜYELİK ---
+        async function checkMembership() {
+            const q = query(collection(db, "communityMembers"), where("communityId", "==", communityId), where("userId", "==", currentUser.uid));
+            const snap = await getDocs(q);
+            const btn = document.getElementById('joinBtn');
+            if (!snap.empty) {
+                isMember = true; memberDocId = snap.docs[0].id; btn.innerText = "Katıldın"; btn.classList.add("joined");
+            } else {
+                isMember = false; memberDocId = null; btn.innerText = "Topluluğa Katıl"; btn.classList.remove("joined");
+            }
+        }
+        
+        window.toggleJoin = async function() {
+            const btn = document.getElementById('joinBtn');
+            const commRef = doc(db, "communities", communityId);
+            btn.disabled = true;
+            if (isMember) {
+                if (confirm("Ayrılmak istiyor musun?")) {
+                    if (memberDocId) {
+                        await deleteDoc(doc(db, "communityMembers", memberDocId));
+                        await updateDoc(commRef, { memberCount: increment(-1) });
+                        isMember = false; memberDocId = null; btn.innerText = "Topluluğa Katıl"; btn.classList.remove("joined"); loadCommunityMembers();
+                    }
+                }
+            } else {
+                const docRef = await addDoc(collection(db, "communityMembers"), { communityId: communityId, userId: currentUser.uid, joinedAt: new Date() });
+                await updateDoc(commRef, { memberCount: increment(1) });
+                isMember = true; memberDocId = docRef.id; btn.innerText = "Katıldın"; btn.classList.add("joined"); loadCommunityMembers();
+            }
+            btn.disabled = false;
+        }
+
+        // --- 3. MEDYA YÜKLEME ---
+        window.previewMedia = function(input) {
+            const file = input.files[0];
+            if (file) {
+                if (file.size > 5 * 1024 * 1024) return alert("Dosya boyutu 5MB'dan küçük olmalı.");
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    currentMediaData = e.target.result;
+                    const previewArea = document.getElementById('mediaPreview');
+                    previewArea.style.display = 'block';
+                    if (file.type.startsWith('image/')) {
+                        currentMediaType = 'image';
+                        previewArea.innerHTML = `<button class="remove-media" onclick="removeMedia()">X</button><img src="${currentMediaData}">`;
+                    } else if (file.type.startsWith('video/')) {
+                        currentMediaType = 'video';
+                        previewArea.innerHTML = `<button class="remove-media" onclick="removeMedia()">X</button><video controls src="${currentMediaData}"></video>`;
+                    }
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+        window.removeMedia = function() {
+            document.getElementById('mediaInput').value = "";
+            currentMediaData = null; currentMediaType = null;
+            document.getElementById('mediaPreview').style.display = 'none';
+        }
+
+        // --- 4. GÖNDERİLER ---
+        function loadCommunityPosts() {
+            const feed = document.getElementById('feedContainer');
+            const q = query(collection(db, "posts"), where("communityId", "==", communityId));
+            onSnapshot(q, (snapshot) => {
+                feed.innerHTML = '';
+                if(snapshot.empty) { feed.innerHTML = '<div class="empty-msg">Henüz gönderi yok.</div>'; return; }
+                let posts = [];
+                snapshot.forEach(doc => posts.push({ id: doc.id, ...doc.data() }));
+                posts.sort((a, b) => b.timestamp - a.timestamp);
+                posts.forEach(post => createPostHTML(post.id, post));
+            });
+        }
+
+        function createPostHTML(postId, post) {
+            const feed = document.getElementById('feedContainer');
+            const newPostDiv = document.createElement('div');
+            newPostDiv.className = 'feed-post'; newPostDiv.id = postId;
+
+            let dateStr = post.timestamp ? new Date(post.timestamp.seconds * 1000).toLocaleDateString("tr-TR") : "";
+            
+            let mediaHTML = "";
+            if (post.type === 'video' && post.mediaUrl) {
+                mediaHTML = `<video src="${post.mediaUrl}" controls class="post-media" style="max-height:400px; background:black; width:100%; border-radius:10px; margin-top:10px;"></video>`;
+            } else if (post.mediaUrl) {
+                mediaHTML = `<img src="${post.mediaUrl}" class="post-media" style="width:100%; border-radius:10px; margin-top:10px;">`;
+            } else if (post.image) {
+                mediaHTML = `<img src="${post.image}" class="post-media" style="width:100%; border-radius:10px; margin-top:10px;">`;
+            }
+
+            let menuOptions = "";
+            if (currentUser.uid === communityAdminId || currentUser.uid === post.uid) {
+                menuOptions = `<div class="option-item" onclick="editPost('${postId}', '${post.text}')">Düzenle</div><div class="option-item danger" onclick="deletePost('${postId}')">Sil</div>`;
+            } else { menuOptions = `<div class="option-item" onclick="alert('Bildirildi.')">Spam Bildir</div>`; }
+
+            const liked = (post.likedBy && post.likedBy.includes(currentUser.uid));
+            const likeClass = liked ? 'liked' : ''; const likeIcon = liked ? 'fa-solid' : 'fa-regular';
+
+            newPostDiv.innerHTML = `
+                <div class="post-header">
+                    <div class="user-info-group"><img src="${post.userImg || 'https://i.pravatar.cc/150?img=12'}"><div><strong>${post.username}</strong><div style="font-size:12px;color:#888;">${dateStr}</div></div></div>
+                    <div class="post-options"><button class="options-btn" onclick="toggleMenu('menu-${postId}')"><i class="fa-solid fa-ellipsis"></i></button><div id="menu-${postId}" class="options-menu">${menuOptions}</div></div>
+                </div>
+                <div class="post-content">${post.text}</div>${mediaHTML}
+                <div class="post-actions">
+                    <div class="action-btn ${likeClass}" onclick="toggleLike('${postId}')"><i class="${likeIcon} fa-heart"></i> <span>${post.likes || 0}</span></div>
+                    <div class="action-btn" onclick="toggleCommentSection('${postId}')"><i class="fa-regular fa-comment"></i> <span id="count-${postId}">0</span></div>
+                </div>
+                <div id="comments-${postId}" class="comment-section">
+                    <div class="comment-list" id="list-${postId}"></div>
+                    <div class="comment-input-wrapper"><input type="text" id="input-${postId}" placeholder="Yorum yap..."><button class="comment-send-btn" onclick="saveComment('${postId}')">Gönder</button></div>
+                </div>
+            `;
+            feed.appendChild(newPostDiv);
+            loadComments(postId);
+        }
+
+        // --- 5. PAYLAŞIM ---
+        window.shareCommPost = async function() {
+            if(currentUser.uid !== communityAdminId) return alert("Yetkiniz yok!");
+            const text = document.getElementById('postInput').value;
+            if(!text && !currentMediaData) return alert("Boş gönderi paylaşılamaz.");
+            const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+            const userData = userDoc.exists() ? userDoc.data() : { username: "Anonim", photoURL: "" };
+            await addDoc(collection(db, "posts"), {
+                communityId: communityId, uid: currentUser.uid, username: userData.username, userImg: userData.photoURL,
+                text: text, mediaUrl: currentMediaData, type: currentMediaType || 'text', timestamp: new Date(), likes: 0, likedBy: []
+            });
+            document.getElementById('postInput').value = ""; removeMedia();
+        }
+
+        // --- 6. ÜYELER ---
+        async function loadCommunityMembers() {
+            const container = document.getElementById('membersContainer');
+            container.innerHTML = '<div class="empty-msg">Yükleniyor...</div>';
+            const q = query(collection(db, "communityMembers"), where("communityId", "==", communityId));
+            const snap = await getDocs(q);
+            container.innerHTML = '';
+            if (snap.empty) { container.innerHTML = '<div class="empty-msg">Henüz üye yok.</div>'; return; }
+            snap.forEach(async (memDoc) => {
+                const memData = memDoc.data();
+                const userDoc = await getDoc(doc(db, "users", memData.userId));
+                if (userDoc.exists()) {
+                    const u = userDoc.data(); const img = u.photoURL || "https://i.pravatar.cc/150?img=12";
+                    container.insertAdjacentHTML('beforeend', `<div class="user-list-item"><div class="user-list-info"><img src="${img}"><div style="font-weight:600;">${u.username}</div></div></div>`);
+                }
+            });
+        }
+
+        // --- YARDIMCILAR ---
+        window.toggleAdminMenu = () => document.getElementById('adminMenu').classList.toggle('active');
+        window.deleteCommunity = async () => { if(confirm("Silmek istediğine emin misin?")) { await deleteDoc(doc(db, "communities", communityId)); const q=query(collection(db,"posts"),where("communityId","==",communityId)); const s=await getDocs(q); s.forEach(async d=>await deleteDoc(d.ref)); alert("Silindi."); location.href="topluluklar.html"; } }
+        window.changeAdmin = async () => { const m = prompt("Yeni admin e-postası:"); if(m){ const q=query(collection(db,"users"),where("email","==",m)); const s=await getDocs(q); if(s.empty)alert("Bulunamadı"); else { await updateDoc(doc(db,"communities",communityId),{createdBy:s.docs[0].id}); alert("Değişti."); location.reload(); } } }
+        window.toggleLike = async (pid) => { const r=doc(db,"posts",pid); const s=await getDoc(r); if(s.exists()){ const p=s.data(); let l=p.likes||0; let lb=p.likedBy||[]; if(lb.includes(currentUser.uid)){l--; lb=lb.filter(i=>i!==currentUser.uid);}else{l++; lb.push(currentUser.uid);} await updateDoc(r,{likes:l,likedBy:lb}); } }
+        function loadComments(pid) { const l=document.getElementById(`list-${pid}`); const q=query(collection(db,"comments"),where("postId","==",pid),orderBy("timestamp","asc")); onSnapshot(q,(s)=>{ l.innerHTML=''; document.getElementById(`count-${pid}`).innerText=s.size; s.forEach(d=>{ const c=d.data(); l.innerHTML+=`<div class="single-comment"><img src="${c.userImg}"><div class="comment-content"><div style="font-weight:bold;">${c.username}</div><div>${c.text}</div></div></div>`; }); }); }
+        window.saveComment = async (pid) => { const i=document.getElementById(`input-${pid}`); if(!i.value)return; const u=await getDoc(doc(db,"users",currentUser.uid)); await addDoc(collection(db,"comments"),{postId:pid,text:i.value,uid:currentUser.uid,username:u.data().username,userImg:u.data().photoURL,timestamp:new Date()}); i.value=""; }
+        window.deletePost = async (pid) => { if(confirm("Sil?")) await deleteDoc(doc(db,"posts",pid)); }
+        window.editPost = async (pid,t) => { const n=prompt("Düzenle:",t); if(n&&n!==t) await updateDoc(doc(db,"posts",pid),{text:n}); document.getElementById(`menu-${pid}`).classList.remove('active'); }
+        window.toggleMenu = (id) => document.getElementById(id).classList.toggle('active');
+        window.toggleCommentSection = (id) => { const el=document.getElementById(`comments-${id}`); el.style.display=el.style.display==='block'?'none':'block'; }
+        window.onclick = (e) => { if(!e.target.closest('.options-btn') && !e.target.closest('.admin-settings-btn')) { document.querySelectorAll('.options-menu, .admin-menu').forEach(m=>m.classList.remove('active')); } }
+    </script>
+</body>
+</html>

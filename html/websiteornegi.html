@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sohbet Alanı</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            text-align: center;
+        }
+        .chat-container {
+            border: 1px solid #ccc;
+            padding: 10px;
+            background: #fff;
+            max-width: 600px;
+            margin: auto;
+        }
+        .messages {
+            height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 5px;
+            margin-bottom: 10px;
+        }
+        .message {
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+        }
+        .message:last-child {
+            border-bottom: none;
+        }
+        .input-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .input-container input {
+            flex: 1;
+            padding: 10px;
+            margin-right: 5px;
+        }
+        .input-container button {
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Sohbet Alanı</h1>
+
+<div class="chat-container">
+    <div class="messages" id="messages"></div>
+
+    <div class="input-container">
+        <input type="text" id="user1Input" placeholder="Kullanıcı 1 mesajınızı yazın...">
+        <button onclick="sendMessage('Kullanıcı 1')">Gönder</button>
+    </div>
+    
+    <div class="input-container">
+        <input type="text" id="user2Input" placeholder="Kullanıcı 2 mesajınızı yazın...">
+        <button onclick="sendMessage('Kullanıcı 2')">Gönder</button>
+    </div>
+</div>
+
+<script>
+    function sendMessage(user) {
+        const inputId = user === 'Kullanıcı 1' ? 'user1Input' : 'user2Input';
+        const input = document.getElementById(inputId);
+        const messageText = input.value;
+
+        if (messageText) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message');
+            messageDiv.textContent = `${user}: ${messageText}`;
+
+            const messagesContainer = document.getElementById('messages');
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight; // En son mesaja kaydır
+
+            input.value = ''; // Giriş alanını temizle
+        }
+    }
+</script>
+
+</body>
+</html>

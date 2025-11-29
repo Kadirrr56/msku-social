@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ayarlar - Just MSKU</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* --- GENEL AYARLAR --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Montserrat', sans-serif; }
+        body { background-color: #000; color: #fff; min-height: 100vh; display: flex; flex-direction: column; }
+
+        /* HEADER */
+        header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 40px; background: #1a1a1a; border-bottom: 1px solid #333;
+            height: 70px;
+        }
+        header h1 { color: #24caac; font-size: 24px; cursor: pointer; }
+        .back-btn {
+            background: #333; color: white; border: none; padding: 8px 15px; 
+            border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 8px;
+            text-decoration: none; font-size: 14px; transition: 0.3s;
+        }
+        .back-btn:hover { background: #24caac; color: black; }
+
+        /* İÇERİK DÜZENİ */
+        .container { max-width: 700px; margin: 30px auto; width: 90%; padding-bottom: 50px; }
+        .section-title { color: #888; font-size: 14px; margin-bottom: 10px; margin-top: 30px; padding-left: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
+
+        /* KART STİLİ */
+        .settings-card {
+            background: #1a1a1a; border-radius: 15px; padding: 25px;
+            border: 1px solid #333; margin-bottom: 10px;
+        }
+
+        /* FORM ELEMANLARI */
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 8px; font-size: 14px; color: #ccc; }
+        .form-input {
+            width: 100%; background: #000; border: 1px solid #333;
+            color: #fff; padding: 12px; border-radius: 8px; outline: none;
+            transition: 0.3s;
+        }
+        .form-input:focus { border-color: #24caac; }
+
+        .save-btn {
+            background: #24caac; color: #000; border: none; padding: 10px 20px;
+            border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; width: 100%;
+        }
+        .save-btn:hover { opacity: 0.9; }
+
+        /* ENGELLENENLER LİSTESİ */
+        .blocked-user-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 0; border-bottom: 1px solid #333; transition: 0.3s;
+        }
+        .blocked-user-row:last-child { border-bottom: none; }
+        .user-info { display: flex; align-items: center; gap: 10px; }
+        .user-info img { width: 40px; height: 40px; border-radius: 50%; border: 1px solid #555; object-fit: cover; }
+        .unblock-btn {
+            background: transparent; border: 1px solid #555; color: #ccc;
+            padding: 5px 15px; border-radius: 20px; cursor: pointer; font-size: 12px; transition: 0.2s;
+        }
+        .unblock-btn:hover { border-color: #24caac; color: #24caac; }
+
+        /* TOGGLE SWITCH (AÇ/KAPA) */
+        .setting-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; }
+        .toggle-switch {
+            position: relative; width: 50px; height: 26px;
+        }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #333; transition: .4s; border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute; content: ""; height: 20px; width: 20px;
+            left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%;
+        }
+        input:checked + .slider { background-color: #24caac; }
+        input:checked + .slider:before { transform: translateX(24px); }
+
+        /* TEHLİKELİ BÖLGE BUTONLARI */
+        .danger-btn {
+            background: rgba(255, 75, 75, 0.1); color: #ff4b4b; border: 1px solid #ff4b4b;
+            padding: 12px; width: 100%; border-radius: 8px; cursor: pointer; 
+            font-weight: bold; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        .danger-btn:hover { background: #ff4b4b; color: white; }
+
+        /* ALERT (BİLDİRİM) */
+        .alert-box {
+            position: fixed; bottom: 20px; right: 20px;
+            background: #24caac; color: #000; padding: 15px 25px;
+            border-radius: 8px; display: none; font-weight: bold;
+            animation: slideIn 0.3s ease; z-index: 2000;
+        }
+        @keyframes slideIn { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .empty-msg { text-align: center; color: #555; padding: 20px; font-size: 13px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1 onclick="window.location.href='index.html'">Just MSKU</h1>
+        <a href="pylsmgemini.html" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Geri Dön</a>
+    </header>
+
+    <div class="container">
+
+        <div class="section-title">Hesap Güvenliği</div>
+        <div class="settings-card">
+            <div class="form-group">
+                <label>Mevcut Şifre</label>
+                <input type="password" class="form-input" placeholder="••••••••">
+            </div>
+            <div class="form-group">
+                <label>Yeni Şifre</label>
+                <input type="password" id="newPass" class="form-input" placeholder="Yeni şifreniz">
+            </div>
+            <div class="form-group">
+                <label>Yeni Şifre (Tekrar)</label>
+                <input type="password" id="confirmPass" class="form-input" placeholder="Yeni şifreniz (tekrar)">
+            </div>
+            <button class="save-btn" onclick="updatePassword()">Şifreyi Güncelle</button>
+        </div>
+
+        <div class="section-title">Gizlilik</div>
+        <div class="settings-card">
+            <h3 style="margin-bottom: 15px; font-size: 16px;">Engellenen Hesaplar</h3>
+            
+            <div id="blockedList">
+                <div class="empty-msg">Yükleniyor...</div>
+            </div>
+        </div>
+
+        <div class="section-title">Tercihler</div>
+        <div class="settings-card">
+            <div class="setting-row">
+                <span>Bildirimleri Aç</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="setting-row">
+                <span>E-posta Bildirimleri</span>
+                <label class="toggle-switch">
+                    <input type="checkbox">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="setting-row">
+                <span>Sadece Arkadaşlar Mesaj Atabilsin</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <div class="section-title" style="color:#ff4b4b;">Tehlikeli Bölge</div>
+        <div class="settings-card" style="border-color: #331111;">
+            <button class="danger-btn" onclick="performLogout()">
+                <i class="fa-solid fa-right-from-bracket"></i> Çıkış Yap
+            </button>
+            <button class="danger-btn" onclick="deleteAccount()" style="background: #ff4b4b; color: white;">
+                <i class="fa-solid fa-trash"></i> Hesabımı Sil
+            </button>
+        </div>
+
+    </div>
+
+    <div id="alertBox" class="alert-box">İşlem Başarılı!</div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signOut, updatePassword as firebaseUpdatePassword, deleteUser, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, query, where, getDocs, doc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDLRlyPJvO5tPtnuzNAtO6H0_t7mo_3qoU",
+            authDomain: "justmsku.firebaseapp.com",
+            projectId: "justmsku",
+            storageBucket: "justmsku.firebasestorage.app",
+            messagingSenderId: "424626283802",
+            appId: "1:424626283802:web:83502f1c09cdcf9acd78a3"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUserUid = null;
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUserUid = user.uid;
+                loadBlockedUsers();
+            } else {
+                window.location.href = "index.html";
+            }
+        });
+
+        // --- ENGELLENEN KULLANICILARI LİSTELE ---
+        async function loadBlockedUsers() {
+            const listContainer = document.getElementById('blockedList');
+            listContainer.innerHTML = '<div class="empty-msg">Yükleniyor...</div>';
+
+            // "blockedUsers" koleksiyonunda, engelleyen kişi (blockedBy) BEN isem getir
+            const q = query(collection(db, "blockedUsers"), where("blockedBy", "==", currentUserUid));
+            const snapshot = await getDocs(q);
+
+            listContainer.innerHTML = ''; // Temizle
+
+            if (snapshot.empty) {
+                listContainer.innerHTML = '<div class="empty-msg">Engellenen kullanıcı yok.</div>';
+                return;
+            }
+
+            snapshot.forEach(async (docSnap) => {
+                const blockedData = docSnap.data(); // { blockedUserId: "...", blockedBy: "..." }
+                const blockedDocId = docSnap.id;
+
+                // Engellenen kişinin detaylarını (isim, resim) al
+                const userDoc = await getDoc(doc(db, "users", blockedData.blockedUserId));
+                
+                if (userDoc.exists()) {
+                    const u = userDoc.data();
+                    const img = u.photoURL || "https://i.pravatar.cc/150?img=12";
+                    
+                    const html = `
+                        <div class="blocked-user-row" id="row-${blockedDocId}">
+                            <div class="user-info">
+                                <img src="${img}" alt="User">
+                                <span>${u.username}</span>
+                            </div>
+                            <button class="unblock-btn" onclick="unblockUser('${blockedDocId}')">Engeli Kaldır</button>
+                        </div>
+                    `;
+                    listContainer.insertAdjacentHTML('beforeend', html);
+                }
+            });
+        }
+
+        // --- ENGELİ KALDIRMA ---
+        window.unblockUser = async function(docId) {
+            if (confirm("Bu kişinin engelini kaldırmak istiyor musunuz?")) {
+                try {
+                    // Veritabanından sil
+                    await deleteDoc(doc(db, "blockedUsers", docId));
+                    
+                    // UI'dan kaldır (Efektli)
+                    const row = document.getElementById(`row-${docId}`);
+                    if (row) {
+                        row.style.opacity = "0";
+                        setTimeout(() => {
+                            row.remove();
+                            // Eğer liste boşaldıysa mesaj göster
+                            const list = document.getElementById('blockedList');
+                            if (list.children.length === 0) {
+                                list.innerHTML = '<div class="empty-msg">Engellenen kullanıcı yok.</div>';
+                            }
+                        }, 300);
+                    }
+                    showAlert("Engel kaldırıldı.");
+                } catch (error) {
+                    console.error("Hata:", error);
+                    alert("Bir hata oluştu.");
+                }
+            }
+        }
+
+        // --- DİĞER FONKSİYONLAR ---
+        window.updatePassword = function() {
+            const p1 = document.getElementById('newPass').value;
+            const p2 = document.getElementById('confirmPass').value;
+
+            if (p1 === "" || p2 === "") return alert("Lütfen şifre giriniz.");
+            if (p1 !== p2) return alert("Şifreler uyuşmuyor!");
+
+            const user = auth.currentUser;
+            if (user) {
+                firebaseUpdatePassword(user, p1).then(() => {
+                    showAlert("Şifreniz başarıyla güncellendi!");
+                    document.getElementById('newPass').value = "";
+                    document.getElementById('confirmPass').value = "";
+                }).catch((error) => {
+                    alert("Hata (Yeniden giriş yapmanız gerekebilir): " + error.message);
+                });
+            }
+        }
+
+        window.performLogout = function() {
+            if(confirm("Çıkış yapmak istediğinize emin misiniz?")) {
+                signOut(auth).then(() => {
+                    window.location.href = "index.html";
+                });
+            }
+        }
+
+        window.deleteAccount = function() {
+            if(confirm("DİKKAT! Hesabınız silinecek. Devam?")) {
+                const user = auth.currentUser;
+                if (user) {
+                    deleteUser(user).then(() => {
+                        alert("Hesabınız silindi.");
+                        window.location.href = "index.html";
+                    }).catch((error) => {
+                        alert("Güvenlik nedeniyle tekrar giriş yapmanız gerekebilir.");
+                    });
+                }
+            }
+        }
+
+        function showAlert(msg) {
+            const box = document.getElementById('alertBox');
+            box.innerText = msg;
+            box.style.display = 'block';
+            setTimeout(() => { box.style.display = 'none'; }, 3000);
+        }
+
+    </script>
+</body>
+</html>

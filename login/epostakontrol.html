@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create An Account</title>
+    <link rel="stylesheet" href="/login/formolusturma.css">
+    <script>
+        function validateEmail() {
+            const emailInput = document.getElementById('email');
+            const email = emailInput.value;
+
+            // E-posta adresinin @posta.mu.edu.tr ile bitip bitmediğini kontrol et
+            if (!email.endsWith('@posta.mu.edu.tr')) {
+                alert('Lütfen geçerli bir @posta.mu.edu.tr e-posta adresi girin.');
+                emailInput.focus();
+                return false; // Formun gönderimini durdur
+            }
+            return true; // Formu gönder
+        }
+    </script>
+</head>
+<body>
+    <form onsubmit="return validateEmail();">
+        <label for="name">İsim-Soyisim</label>
+        <input type="text" id="name" placeholder="İsminiz-Soyisminiz" required>
+        
+        <label for="email">E-mailiniz:</label>
+        <input type="email" id="email" placeholder="E-mailinizi girin" required>
+        
+        <label for="password1">Şifre</label>
+        <input type="password" id="password" placeholder="Şifrenizi Oluşturun" required>
+        
+        <label for="password2">Şifre (Tekrar)</label>
+        <input type="password" id="password2" placeholder="Şifrenizi Tekrar Girin" required>
+        
+        <input type="submit" value="Kayit Ol">
+    </form>
+    
+</body>
+</html>

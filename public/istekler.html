@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İstekler - Just MSKU</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Montserrat', sans-serif; }
+        body { background-color: #000; color: #fff; display: flex; flex-direction: column; height: 100vh; }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 15px 40px; background: #1a1a1a; border-bottom: 1px solid #333; height: 70px; }
+        header h1 { color: #24caac; font-size: 24px; cursor: pointer; }
+        .back-btn { background: #333; color: white; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer; text-decoration: none; font-size: 14px; }
+        .container { max-width: 600px; margin: 40px auto; width: 90%; }
+        .request-card { background: #1a1a1a; padding: 15px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; border: 1px solid #333; margin-bottom: 15px; }
+        .user-info { display: flex; align-items: center; gap: 15px; }
+        .user-info img { width: 50px; height: 50px; border-radius: 50%; border: 2px solid #24caac; }
+        .btn { padding: 8px 20px; border-radius: 20px; border: none; font-weight: 600; cursor: pointer; font-size: 13px; margin-left: 5px;}
+        .btn-accept { background: #24caac; color: #000; }
+        .btn-reject { background: #333; color: #ccc; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1 onclick="window.location.href='pylsmgemini.html'">Just MSKU</h1>
+        <a href="pylsmgemini.html" class="back-btn">Ana Sayfaya Dön</a>
+    </header>
+    <div class="container">
+        <h2 style="color: #24caac; margin-bottom: 20px;">Takip İstekleri <span id="reqCount" style="font-size:14px; color:#888;">(0)</span></h2>
+        <div id="requestsContainer">Yükleniyor...</div>
+        <div id="emptyState" style="text-align: center; color: #555; margin-top: 50px; display: none;">Bekleyen yeni bir istek yok.</div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, query, where, getDocs, addDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDLRlyPJvO5tPtnuzNAtO6H0_t7mo_3qoU",
+            authDomain: "justmsku.firebaseapp.com",
+            projectId: "justmsku",
+            storageBucket: "justmsku.firebasestorage.app",
+            messagingSenderId: "424626283802",
+            appId: "1:424626283802:web:83502f1c09cdcf9acd78a3"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) loadRequests(user.uid);
+            else window.location.href = "login.html";
+        });
+
+        async function loadRequests(myUid) {
+            const container = document.getElementById('requestsContainer');
+            const emptyState = document.getElementById('emptyState');
+            
+            // Firestore Sorgusu: "toUid" == "Benim ID'm"
+            const q = query(collection(db, "friendRequests"), where("toUid", "==", myUid));
+            const querySnapshot = await getDocs(q);
+
+            container.innerHTML = "";
+
+            if (querySnapshot.empty) {
+                emptyState.style.display = 'block';
+                document.getElementById('reqCount').innerText = "(0)";
+            } else {
+                emptyState.style.display = 'none';
+                document.getElementById('reqCount').innerText = `(${querySnapshot.size})`;
+                
+                querySnapshot.forEach((docSnap) => {
+                    const req = docSnap.data();
+                    const reqId = docSnap.id; // Belge ID'si silmek için gerekli
+
+                    const html = `
+                        <div class="request-card" id="${reqId}">
+                            <div class="user-info">
+                                <img src="${req.fromImg}" alt="User">
+                                <div>
+                                    <h4 style="margin:0;">${req.fromName}</h4>
+                                    <span style="font-size:12px; color:#888;">${req.desc}</span>
+                                </div>
+                            </div>
+                            <div>
+                                <button class="btn btn-accept" onclick="processRequest('${reqId}', '${req.fromUid}', '${myUid}', true)">Kabul Et</button>
+                                <button class="btn btn-reject" onclick="processRequest('${reqId}', null, null, false)">Reddet</button>
+                            </div>
+                        </div>
+                    `;
+                    container.insertAdjacentHTML('beforeend', html);
+                });
+            }
+        }
+
+        window.processRequest = async function(docId, fromUid, toUid, isAccepted) {
+            const card = document.getElementById(docId);
+            card.style.opacity = "0";
+
+            // 1. İsteği sil (Kabul de edilse red de edilse silinir)
+            await deleteDoc(doc(db, "friendRequests", docId));
+
+            // 2. Kabul edildiyse İLİŞKİ TABLOSUNA EKLE
+            if (isAccepted) {
+                await addDoc(collection(db, "relationships"), {
+                    followerUid: fromUid, // Beni takip eden
+                    followingUid: toUid   // Ben
+                });
+            }
+
+            setTimeout(() => { 
+                card.remove(); 
+                location.reload(); // Sayfayı yenile ki sayaç güncellensin
+            }, 300);
+        }
+    </script>
+</body>
+</html>

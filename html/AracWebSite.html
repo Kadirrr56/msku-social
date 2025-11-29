@@ -1,0 +1,32 @@
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>ESP32 Araba</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <style>
+        body { font-family: Arial; text-align: center; }
+        button {
+          width: 120px; height: 60px;
+          font-size: 18px; margin: 10px;
+        }
+      </style>
+    </head>
+    <body>
+      <h1>🚗 ESP32 Araba Kontrol</h1>
+      <div>
+        <button onclick="fetch('/f')">İleri</button>
+      </div>
+      <div>
+        <button onclick="fetch('/l')">Sol</button>
+        <button onclick="fetch('/s')">Dur</button>
+        <button onclick="fetch('/r')">Sağ</button>
+      </div>
+      <div>
+        <button onclick="fetch('/b')">Geri</button>
+      </div>
+      <div>
+        <button style="background: orange;" onclick="fetch('/copilot')">🤖 Copilot</button>
+      </div>
+    </body>
+    </html>
+

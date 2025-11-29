@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kullanıcı Profili - Just MSKU</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* --- GENEL AYARLAR --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Montserrat', sans-serif; }
+        body { background-color: #000; color: #fff; min-height: 100vh; display: flex; flex-direction: column; }
+
+        /* HEADER */
+        header { display: flex; justify-content: space-between; align-items: center; padding: 15px 40px; background: #1a1a1a; border-bottom: 1px solid #333; height: 70px; flex-shrink: 0; }
+        header h1 { color: #24caac; font-size: 24px; cursor: pointer; }
+        .back-btn { background: #333; color: white; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none; font-size: 14px; transition: 0.3s; }
+        .back-btn:hover { background: #24caac; color: black; }
+
+        /* PROFİL KARTI */
+        .container { max-width: 800px; margin: 0 auto; width: 90%; padding: 30px 0; }
+        .profile-card { background: #1a1a1a; border: 1px solid #333; border-radius: 15px; padding: 30px; display: flex; flex-direction: column; align-items: center; margin-bottom: 30px; position: relative; }
+        
+        .avatar-container { position: relative; margin-bottom: 15px; }
+        .avatar-circle { width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 4px solid #24caac; background-color: #fff; }
+
+        /* YENİ: SEÇENEKLER BUTONU (Üç Nokta) */
+        .profile-options-btn {
+            position: absolute; top: 0; right: 0; 
+            background: #333; color: #fff; border: 1px solid #555;
+            width: 30px; height: 30px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; z-index: 10;
+        }
+        .profile-options-btn:hover { background: #444; color: #24caac; }
+
+        /* YENİ: SEÇENEKLER MENÜSÜ */
+        .profile-menu {
+            display: none; position: absolute; top: 35px; right: -10px;
+            background: #222; border: 1px solid #444; border-radius: 8px;
+            width: 120px; z-index: 100; flex-direction: column;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+        .profile-menu.active { display: flex; }
+        .profile-menu-item {
+            padding: 10px; font-size: 12px; cursor: pointer; color: #ccc;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .profile-menu-item:hover { background: #333; color: #fff; }
+        .profile-menu-item.danger { color: #ff4b4b; border-top: 1px solid #333; }
+        .profile-menu-item.danger:hover { background: rgba(255, 75, 75, 0.1); }
+
+        .user-name { font-size: 24px; font-weight: bold; margin-bottom: 5px; color: #fff; }
+        .user-title { font-size: 14px; color: #888; margin-bottom: 20px; }
+        .bio-text { color: #ccc; line-height: 1.6; font-size: 14px; margin-bottom: 20px; text-align: center; max-width: 500px; }
+
+        .action-btn { background: #24caac; color: #000; border: none; padding: 8px 25px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-bottom: 20px; }
+        .action-btn:hover { opacity: 0.9; }
+        .action-btn.following { background: #333; color: #24caac; border: 1px solid #24caac; }
+
+        .stats-bar { display: flex; gap: 30px; padding-top: 20px; border-top: 1px solid #333; width: 100%; justify-content: center; }
+        .stat-item { text-align: center; }
+        .stat-value { font-size: 18px; font-weight: bold; color: #fff; display: block; }
+        .stat-label { font-size: 12px; color: #888; }
+
+        /* GÖNDERİLER */
+        .section-title { color: #24caac; margin-bottom: 20px; padding-left: 10px; border-left: 4px solid #24caac; font-size: 18px; }
+        .feed-post { background: #1a1a1a; border-radius: 15px; padding: 15px; margin-bottom: 20px; border: 1px solid #333; }
+        .post-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .post-header img { width: 40px; height: 40px; border-radius: 50%; }
+        .post-content { margin-bottom: 15px; line-height: 1.5; font-size: 15px; white-space: pre-wrap; }
+        .post-image img { width: 100%; border-radius: 10px; margin-top: 5px; border: 1px solid #333; }
+        .empty-msg { text-align: center; padding: 40px; color: #555; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1 onclick="window.location.href='pylsmgemini.html'">Just MSKU</h1>
+        <a href="pylsmgemini.html" class="back-btn">Ana Sayfa</a>
+    </header>
+
+    <div class="container">
+        
+        <div class="profile-card">
+            <div class="avatar-container">
+                <img id="targetUserImg" src="" class="avatar-circle">
+                
+                <div class="profile-options-btn" onclick="toggleProfileMenu()">
+                    <i class="fa-solid fa-ellipsis"></i>
+                </div>
+                <div id="profileMenu" class="profile-menu">
+                    <div class="profile-menu-item" onclick="alert('Şikayet edildi.')">
+                        <i class="fa-solid fa-flag"></i> Şikayet Et
+                    </div>
+                    <div class="profile-menu-item danger" onclick="alert('Kullanıcı engellendi (Demo).')">
+                        <i class="fa-solid fa-ban"></i> Engelle
+                    </div>
+                </div>
+                </div>
+
+            <div class="user-name" id="targetUserName">Yükleniyor...</div>
+            <div class="user-title">MSKU Öğrencisi</div>
+            <p id="targetUserBio" class="bio-text">...</p>
+
+            <button id="followBtn" class="action-btn" onclick="toggleFollow()">Takip Et</button>
+
+            <div class="stats-bar">
+                <div class="stat-item">
+                    <span id="statPostCount" class="stat-value">0</span>
+                    <span class="stat-label">Gönderi</span>
+                </div>
+                <div class="stat-item">
+                    <span id="statFollowerCount" class="stat-value">0</span>
+                    <span class="stat-label">Takipçi</span>
+                </div>
+                <div class="stat-item">
+                    <span id="statFollowingCount" class="stat-value">0</span>
+                    <span class="stat-label">Takip</span>
+                </div>
+            </div>
+        </div>
+
+        <h3 class="section-title">Paylaşımlar</h3>
+        <div id="userFeedContainer">
+            <div class="empty-msg">Yükleniyor...</div>
+        </div>
+
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, collection, query, where, getDocs, orderBy, addDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDLRlyPJvO5tPtnuzNAtO6H0_t7mo_3qoU",
+            authDomain: "justmsku.firebaseapp.com",
+            projectId: "justmsku",
+            storageBucket: "justmsku.firebasestorage.app",
+            messagingSenderId: "424626283802",
+            appId: "1:424626283802:web:83502f1c09cdcf9acd78a3"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const defaultAvatar = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=";
+
+        let currentUserUid = null;
+        let targetUserId = new URLSearchParams(window.location.search).get('kisi');
+        let isFollowing = false;
+        let relationshipDocId = null;
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUserUid = user.uid;
+                if (targetUserId === currentUserUid) {
+                    window.location.href = "profil.html"; // Kendi profiline bakıyorsa yönlendir
+                    return;
+                }
+                await loadTargetUserProfile();
+                checkFollowStatus();
+                loadUserPosts();
+                updateStats(targetUserId);
+            } else {
+                window.location.href = "login.html";
+            }
+        });
+
+        async function loadTargetUserProfile() {
+            const docSnap = await getDoc(doc(db, "users", targetUserId));
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                document.getElementById('targetUserName').innerText = data.username;
+                document.getElementById('targetUserImg').src = data.photoURL || defaultAvatar;
+                document.getElementById('targetUserBio').innerText = data.bio || "Henüz bir biyografi eklenmedi.";
+            } else {
+                alert("Kullanıcı bulunamadı.");
+                window.location.href = "pylsmgemini.html";
+            }
+        }
+
+        async function checkFollowStatus() {
+            const q = query(collection(db, "relationships"), 
+                where("followerUid", "==", currentUserUid), 
+                where("followingUid", "==", targetUserId));
+            
+            const snapshot = await getDocs(q);
+            const btn = document.getElementById('followBtn');
+
+            if (!snapshot.empty) {
+                isFollowing = true;
+                relationshipDocId = snapshot.docs[0].id;
+                btn.innerText = "Takipten Çık";
+                btn.classList.add("following");
+            } else {
+                isFollowing = false;
+                btn.innerText = "Takip Et";
+                btn.classList.remove("following");
+            }
+        }
+
+        window.toggleFollow = async function() {
+            const btn = document.getElementById('followBtn');
+            btn.disabled = true;
+
+            if (isFollowing) {
+                // Takipten Çık
+                if (relationshipDocId) {
+                    await deleteDoc(doc(db, "relationships", relationshipDocId));
+                    isFollowing = false;
+                    btn.innerText = "Takip Et";
+                    btn.classList.remove("following");
+                    updateStats(targetUserId);
+                }
+            } else {
+                // Takip Et
+                // Bildirim (Friend Request) veya Direkt Takip (Bu örnekte direkt takip)
+                const docRef = await addDoc(collection(db, "relationships"), {
+                    followerUid: currentUserUid,
+                    followingUid: targetUserId,
+                    timestamp: new Date()
+                });
+                relationshipDocId = docRef.id;
+                isFollowing = true;
+                btn.innerText = "Takipten Çık";
+                btn.classList.add("following");
+                updateStats(targetUserId);
+            }
+            btn.disabled = false;
+        }
+
+        function loadUserPosts() {
+            const feed = document.getElementById('userFeedContainer');
+            const q = query(collection(db, "posts"), where("uid", "==", targetUserId), orderBy("timestamp", "desc"));
+
+            onSnapshot(q, (snapshot) => {
+                feed.innerHTML = '';
+                if (snapshot.empty) {
+                    feed.innerHTML = '<div class="empty-msg">Henüz gönderi yok.</div>';
+                    return;
+                }
+
+                snapshot.forEach(doc => {
+                    const post = doc.data();
+                    let imageHTML = post.image ? `<div class="post-image"><img src="${post.image}"></div>` : '';
+                    let dateStr = post.timestamp ? new Date(post.timestamp.seconds * 1000).toLocaleDateString("tr-TR") : "";
+
+                    const html = `
+                        <div class="feed-post">
+                            <div class="post-header">
+                                <img src="${post.userImg || defaultAvatar}">
+                                <div>
+                                    <strong>${post.username}</strong>
+                                    <div style="font-size:12px; color:#888;">${dateStr}</div>
+                                </div>
+                            </div>
+                            <div class="post-content">${post.text}</div>
+                            ${imageHTML}
+                        </div>
+                    `;
+                    feed.innerHTML += html;
+                });
+            });
+        }
+
+        async function updateStats(uid) {
+            const qPosts = query(collection(db, "posts"), where("uid", "==", uid));
+            const sPosts = await getDocs(qPosts);
+            document.getElementById('statPostCount').innerText = sPosts.size;
+
+            const qFollowers = query(collection(db, "relationships"), where("followingUid", "==", uid));
+            const sFollowers = await getDocs(qFollowers);
+            document.getElementById('statFollowerCount').innerText = sFollowers.size;
+
+            const qFollowing = query(collection(db, "relationships"), where("followerUid", "==", uid));
+            const sFollowing = await getDocs(qFollowing);
+            document.getElementById('statFollowingCount').innerText = sFollowing.size;
+        }
+
+        // YENİ: Menü Açma/Kapama
+        window.toggleProfileMenu = function() {
+            const menu = document.getElementById('profileMenu');
+            menu.classList.toggle('active');
+        }
+
+        // Dışarı tıklayınca kapat
+        window.onclick = function(event) {
+            if (!event.target.closest('.profile-options-btn') && !event.target.closest('.profile-menu')) {
+                document.getElementById('profileMenu').classList.remove('active');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Muğla Sıtkı Koçman Üniversitesi</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Montserrat', sans-serif; }
+        body { background: #f0f0f0; color: #333; }
+        header { background: #1a1a1a; color: #24caac; padding: 20px; text-align: center; }
+        h1, h2, h3 { margin: 10px 0; }
+        nav { display: flex; justify-content: center; gap: 20px; margin: 20px 0; }
+        nav a { text-decoration: none; color: #1a1a1a; font-weight: 600; }
+        nav a:hover { color: #24caac; }
+        section { padding: 30px; background: #fff; margin: 20px; border-radius: 10px; }
+        .faculty-list, .department-list { display: flex; flex-wrap: wrap; gap: 20px; }
+        .card { background: #1a1a1a; color: #fff; padding: 20px; border-radius: 10px; width: 200px; cursor: pointer; transition: .3s; }
+        .card:hover { background: #24caac; }
+        .comment-section { margin-top: 30px; }
+        .comment-section textarea { width: 100%; height: 80px; padding: 10px; border-radius: 6px; border: 1px solid #ccc; }
+        .comment-section button { margin-top: 10px; padding: 10px 20px; border: none; border-radius: 6px; background: #24caac; color: #fff; cursor: pointer; }
+        .comments { margin-top: 20px; }
+        .comment { background: #e0e0e0; padding: 10px; border-radius: 6px; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Muğla Sıtkı Koçman Üniversitesi</h1>
+</header>
+
+<section id="about">
+    <h2>Okul Hakkında</h2>
+    <p>Muğla Sıtkı Koçman Üniversitesi, 1992 yılında kurulmuş ve Ege Bölgesi'nde eğitim veren köklü bir devlet üniversitesidir. Kampüsü, fakülteleri ve araştırma merkezleri ile geniş bir akademik yelpazeye sahiptir.</p>
+</section>
+
+<section id="faculties">
+    <h2>Fakülteler</h2>
+    <div class="faculty-list">
+        <div class="card" onclick="showDepartments('Mühendislik Fakültesi')">Mühendislik Fakültesi</div>
+        <div class="card" onclick="showDepartments('Fen Edebiyat Fakültesi')">Fen Edebiyat Fakültesi</div>
+        <div class="card" onclick="showDepartments('İktisadi ve İdari Bilimler Fakültesi')">İktisadi ve İdari Bilimler Fakültesi</div>
+        <div class="card" onclick="showDepartments('Sağlık Bilimleri Fakültesi')">Sağlık Bilimleri Fakültesi</div>
+        <div class="card" onclick="showDepartments('Tıp Fakültesi')">Tıp Fakültesi</div>
+        <div class="card" onclick="showDepartments('Eğitim Fakültesi')">Eğitim Fakültesi</div>
+        <div class="card" onclick="showDepartments('Mimarlık Fakültesi')">Mimarlık Fakültesi</div>
+        <div class="card" onclick="showDepartments('Teknoloji Fakültesi')">Teknoloji Fakültesi</div>
+    </div>
+</section>
+
+<section id="departments" style="display:none;">
+    <h2 id="facultyName">Fakülte Adı</h2>
+    <div class="department-list" id="departmentList">
+        <!-- Bölümler buraya JS ile gelecek -->
+    </div>
+</section>
+
+<section id="departmentInfo" style="display:none;">
+    <h2 id="departmentTitle">Bölüm Adı</h2>
+    <p id="departmentDesc">Bölüm hakkında bilgi burada gösterilecek.</p>
+</section>
+
+<section class="comment-section">
+    <h3>Yorumlar</h3>
+    <textarea id="commentInput" placeholder="Yorum yazın..."></textarea>
+    <button onclick="addComment()">Gönder</button>
+    <div class="comments" id="commentsContainer"></div>
+</section>
+
+<script>
+const departments = {
+    'Mühendislik Fakültesi': ['Bilgisayar Mühendisliği', 'Elektrik-Elektronik Mühendisliği'],
+    'Fen Edebiyat Fakültesi': ['Matematik', 'Fizik'],
+    'İktisadi ve İdari Bilimler Fakültesi': ['İktisat', 'İşletme'],
+    'Sağlık Bilimleri Fakültesi': ['Hemşirelik', 'Fizyoterapi'],
+    'Tıp Fakültesi': ['Tıp'],
+    'Eğitim Fakültesi': ['Sınıf Öğretmenliği', 'Rehberlik'],
+    'Mimarlık Fakültesi': ['Mimarlık', 'İç Mimarlık'],
+    'Teknoloji Fakültesi': ['Bilgisayar Teknolojisi', 'Elektronik Teknolojisi']
+};
+
+const departmentDescriptions = {
+    'Bilgisayar Mühendisliği': 'Bilgisayar mühendisliği bölümü yazılım ve donanım alanlarında eğitim verir.',
+    'Elektrik-Elektronik Mühendisliği': 'Elektrik ve elektronik mühendisliği alanında teorik ve uygulamalı eğitim sağlar.',
+    'Matematik': 'Matematik bölümü analitik düşünme ve problem çözme yeteneklerini geliştirir.',
+    'Fizik': 'Fizik bölümü doğa bilimleri ve deneysel çalışmalar üzerine eğitim verir.',
+    'İktisat': 'İktisat bölümü ekonomik analiz ve teori eğitimi sağlar.',
+    'İşletme': 'İşletme bölümü yönetim, pazarlama ve finans konularında eğitim verir.',
+    'Hemşirelik': 'Hemşirelik bölümü sağlık hizmetlerinde eğitim ve uygulama sunar.',
+    'Fizyoterapi': 'Fizyoterapi bölümü fizik tedavi ve rehabilitasyon eğitimi verir.',
+    'Tıp': 'Tıp fakültesi öğrencilere insan sağlığı ve klinik eğitim sağlar.',
+    'Sınıf Öğretmenliği': 'Eğitim fakültesi sınıf öğretmenliği bölümü temel eğitim öğretmenliği sunar.',
+    'Rehberlik': 'Rehberlik bölümü psikolojik danışmanlık ve rehberlik eğitim verir.',
+    'Mimarlık': 'Mimarlık bölümü yapı ve tasarım eğitimi sağlar.',
+    'İç Mimarlık': 'İç Mimarlık bölümü iç mekan tasarımı ve dekorasyon eğitim verir.',
+    'Bilgisayar Teknolojisi': 'Bilgisayar teknolojisi bölümü uygulamalı bilgi işlem eğitim verir.',
+    'Elektronik Teknolojisi': 'Elektronik teknolojisi bölümü elektronik cihazlar ve devreler öğretir.'
+};
+
+function showDepartments(faculty){
+    document.getElementById('faculties').style.display = 'none';
+    document.getElementById('departments').style.display = 'block';
+    document.getElementById('facultyName').textContent = faculty;
+
+    const deptList = document.getElementById('departmentList');
+    deptList.innerHTML = '';
+    departments[faculty].forEach(dept => {
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.textContent = dept;
+        div.onclick = () => showDepartmentInfo(dept);
+        deptList.appendChild(div);
+    });
+}
+
+function showDepartmentInfo(dept){
+    document.getElementById('departmentInfo').style.display = 'block';
+    document.getElementById('departmentTitle').textContent = dept;
+    document.getElementById('departmentDesc').textContent = departmentDescriptions[dept];
+    window.scrollTo({top: document.getElementById('departmentInfo').offsetTop - 20, behavior: 'smooth'});
+}
+
+function addComment(){
+    const input = document.getElementById('commentInput');
+    const container = document.getElementById('commentsContainer');
+    if(input.value.trim() !== ''){
+        const div = document.createElement('div');
+        div.className = 'comment';
+        div.textContent = input.value;
+        container.appendChild(div);
+        input.value = '';
+    }
+}
+</script>
+
+</body>
+</html>

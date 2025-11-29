@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ana Sayfa - Just MSKU</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    
+    <style>
+        /* --- CSS BAŞLANGICI --- */
+        *{ margin: 0; padding: 0; box-sizing: border-box; font-family: 'Montserrat', sans-serif; }
+        body{ background: #000; color: #fff; }
+
+        header{
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 20px 40px; background: #1a1a1a; border-bottom: 1px solid #333;
+        }
+
+        header h1{ color: #24caac; }
+
+        .header-right { display: flex; align-items: center; gap: 20px; }
+
+        .user-info {
+            display: flex; align-items: center; gap: 10px;
+            background: #333; padding: 8px 15px; border-radius: 20px;
+        }
+        .user-info i { color: #24caac; }
+
+        .logout-btn {
+            background: #ff4b4b; color: white; border: none; padding: 8px 15px;
+            border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px;
+        }
+        .logout-btn:hover { opacity: 0.8; }
+
+        .main-content{
+            display: flex; justify-content: center; align-items: center;
+            margin-top: 100px; gap: 50px; flex-wrap: wrap;
+        }
+
+        .card{
+            width: 120px; height: 120px; background: #1a1a1a; border-radius: 12px;
+            display: flex; justify-content: center; align-items: center;
+            flex-direction: column; cursor: pointer; transition: .3s;
+            border: 1px solid #333;
+        }
+
+        .card:hover{ background: #24caac; color: #000; transform: translateY(-5px); }
+        .card i { font-size: 40px; margin-bottom: 10px; }
+        .card span{ font-size: 14px; font-weight: 600; }
+
+        /* Mesajlaşma alanı */
+        #chatContainer{
+            display: none; position: fixed; bottom: 20px; right: 20px;
+            background: #1a1a1a; padding: 15px; border-radius: 10px;
+            width: 350px; border: 1px solid #333; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+        #chatHeader{
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 10px; font-weight: bold; border-bottom: 1px solid #333; padding-bottom: 10px;
+        }
+        #chat{
+            height: 250px; overflow-y: auto; border: 1px solid #333;
+            padding: 10px; margin-bottom: 10px; background: #000; border-radius: 5px;
+        }
+        #chat div { margin-bottom: 8px; font-size: 14px; }
+        .input-area { display: flex; gap: 5px; }
+        #messageInput{
+            flex: 1; padding: 8px; border-radius: 6px; border: none; outline: none;
+        }
+        #sendBtn{
+            padding: 8px 15px; border: none; border-radius: 6px;
+            background: #24caac; color: #fff; cursor: pointer; font-weight: bold;
+        }
+        #closeBtn{ cursor: pointer; color: #ff4b4b; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Just MSKU</h1>
+    
+    <div class="header-right">
+        <div class="user-info">
+            <i class="fa-solid fa-user"></i>
+            <span id="userNameDisplay">Yükleniyor...</span>
+        </div>
+        
+        <div class="request">
+            <i class="fa-solid fa-heart" style="color: #24caac; margin-right: 5px;"></i>
+            <span>İstekler</span>
+        </div>
+
+        <button class="logout-btn" onclick="userLogout()">Çıkış Yap</button>
+    </div>
+</header>
+
+<div class="main-content">
+    <div class="card">
+        <i class="fa-solid fa-house"></i>
+        <span>Ana Sayfa</span>
+    </div>
+    <div class="card">
+        <i class="fa-solid fa-newspaper"></i>
+        <span>Haberler</span>
+    </div>
+    <div class="card" onclick="toggleChat()">
+        <i class="fa-solid fa-compass"></i>
+        <span>Keşfet</span>
+    </div>
+    <div class="card" onclick="toggleChat()">
+        <i class="fa-solid fa-comments"></i>
+        <span>Mesajlaşma</span>
+    </div>
+</div>
+
+<div id="chatContainer">
+    <div id="chatHeader">
+        <span>Sohbet</span>
+        <span id="closeBtn" onclick="toggleChat()">X</span>
+    </div>
+    <div id="chat"></div>
+    <div class="input-area">
+        <input type="text" id="messageInput" placeholder="Mesaj yazın...">
+        <button id="sendBtn" onclick="sendMessage()">Gönder</button>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+    // 1. AYNI API BİLGİLERİ (Register ve Login ile aynı olmalı)
+    const firebaseConfig = {
+        apiKey: "AIzaSyDLRlyPJvO5tPtnuzNAtO6H0_t7mo_3qoU",
+        authDomain: "justmsku.firebaseapp.com",
+        projectId: "justmsku",
+        storageBucket: "justmsku.firebasestorage.app",
+        messagingSenderId: "424626283802",
+        appId: "1:424626283802:web:83502f1c09cdcf9acd78a3"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // 2. GÜVENLİK KONTROLÜ: Kullanıcı giriş yapmış mı?
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            // Evet, giriş yapmış. Kullanıcı adını alalım.
+            // Email: ahmet.yilmaz@posta.mu.edu.tr -> İsim: ahmet.yilmaz
+            const username = user.email.split('@')[0]; 
+            document.getElementById('userNameDisplay').textContent = username;
+            
+            // Chat kısmındaki ismi de güncelle
+            window.currentUserEmail = username; 
+        } else {
+            // Hayır, giriş yapmamış. Login sayfasına geri at.
+            window.location.href = "login.html";
+        }
+    });
+
+    // 3. ÇIKIŞ YAPMA FONKSİYONU
+    window.userLogout = function() {
+        signOut(auth).then(() => {
+            window.location.href = "login.html";
+        }).catch((error) => {
+            console.error("Çıkış hatası:", error);
+        });
+    }
+
+    // --- SENİN CHAT FONKSİYONLARIN (Global Erişime Açıldı) ---
+    
+    const chatBox = document.getElementById('chat');
+    const chatContainer = document.getElementById('chatContainer');
+    let selectedUser = 'Yapay Zeka'; // Varsayılan sohbet
+
+    window.toggleChat = function() {
+        if (chatContainer.style.display === 'none' || chatContainer.style.display === '') {
+            chatContainer.style.display = 'block';
+            if(chatBox.innerHTML === "") { // İlk açılışta mesaj
+                 chatBox.innerHTML = `<div style="color:#24caac;"><strong>Sistem:</strong> Hoş geldin!</div>`;
+            }
+        } else {
+            chatContainer.style.display = 'none';
+        }
+    }
+
+    window.sendMessage = function() {
+        const messageInput = document.getElementById('messageInput');
+        const message = messageInput.value;
+
+        if (message.trim() !== "") {
+            // Kendi mesajımız
+            chatBox.innerHTML += `<div style="text-align:right;"><strong>Ben:</strong> ${message}</div>`;
+            messageInput.value = '';
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            // Bot Cevabı
+            setTimeout(() => {
+                const responseMessage = getResponse(message);
+                chatBox.innerHTML += `<div style="text-align:left; color:#ccc;"><strong>${selectedUser}:</strong> ${responseMessage}</div>`;
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }, 1000);
+        }
+    }
+
+    function getResponse(message) {
+        const lowerCaseMessage = message.toLowerCase();
+        if (lowerCaseMessage.includes('selam')) return 'Aleyküm Selam! Nasılsın?';
+        if (lowerCaseMessage.includes('nasılsın')) return 'Ben bir kod parçasıyım ama harika hissediyorum!';
+        if (lowerCaseMessage.includes('ders')) return 'Dersler yoğun ama halledersin, güveniyorum.';
+        if (lowerCaseMessage.includes('yemek')) return 'Yemekhanede bugün ne var acaba?';
+        return 'Bunu henüz anlayamadım ama öğreniyorum!';
+    }
+</script>
+
+</body>
+</html>

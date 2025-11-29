@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/navbarsitecss/navbar.css"> <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <title>Document</title>
+
+    <style>
+        /* --- BU KISMI EKLEMEN GEREKİYOR --- */
+        
+        /* Header genel kapsayıcı */
+        header {
+            width: 100%;
+            background-color: #1a1a1a; /* Arka plan rengi (örnek) */
+            padding: 15px 30px; /* Kenarlardan boşluk */
+        }
+
+        /* Logo ve Linkleri tutan kutu */
+        .login {
+            display: flex;             /* Esnek kutu yapısı */
+            justify-content: space-between; /* İki uca yasla (Biri sola, biri sağa) */
+            align-items: center;       /* Dikeyde ortala */
+        }
+
+        /* Linklerin listesi (ul) */
+        .nav_links {
+            list-style: none;          /* Noktaları kaldır */
+            display: flex;             /* Linkleri yan yana diz */
+            gap: 25px;                 /* Linkler arası boşluk */
+        }
+
+        /* Linklerin kendisi (a) */
+        .nav_links li a {
+            text-decoration: none;     /* Alt çizgiyi kaldır */
+            color: #fff;               /* Yazı rengi */
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .nav_links li a:hover {
+            color: #24caac;            /* Üzerine gelince renk değişimi */
+        }
+
+        .logo h2 a {
+            text-decoration: none;
+            color: #24caac;
+            font-family: 'Montserrat', sans-serif;
+        }
+    </style>
+
+</head>
+<body>
+    <header>
+        <div class="login">
+            <div class="logo">
+                <h2><a href="#">Just MSKU</a></h2>
+            </div>
+            
+            <ul class="nav_links">
+                <li><a href="index.html">Ana Sayfa</a></li>
+                <li><a href="/public/hakkında.html">Hakkında</a></li>
+                <li><a href="login.html">Giriş Yap</a></li>
+                <li><a href="/public/kayıt.html">Kayıt Ol</a></li>
+            </ul>
+        </div>
+    </header>
+
+    <section id="anasayfa">
+        <div class="inner_anasayfa">
+            <div class="child_anasayfa">
+                <h1>MSKU öğrencisi misin? <br> <span class="span_child">Ne bekliyorsun?</span></h1>
+                <p>MSKU öğrencilerine özel alan</p>
+                <button class="btn"><a href="kayit.html" style="text-decoration: none; color: black;">Create An Account</a></button>
+            </div>
+            <div class="child_anasayfa"></div>
+            <img src="/img/Mugla_Sitki_Kocman_University_logo_imtiyaz_31711e8adf.png" alt="">
+        </div>
+     </section>
+     
+</body>
+</html>
