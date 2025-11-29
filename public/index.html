@@ -3,44 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/navbarsitecss/navbar.css"> <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
-    <title>Document</title>
+    
+    <link rel="stylesheet" href="/public/login/navbarsitecss/navbar.css"> 
+    
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <title>Just MSKU</title>
 
     <style>
-        /* --- BU KISMI EKLEMEN GEREKİYOR --- */
+        /* --- HEADER TASARIMI --- */
         
         /* Header genel kapsayıcı */
         header {
             width: 100%;
-            background-color: #1a1a1a; /* Arka plan rengi (örnek) */
-            padding: 15px 30px; /* Kenarlardan boşluk */
+            background-color: #1a1a1a;
+            padding: 15px 30px;
         }
 
         /* Logo ve Linkleri tutan kutu */
         .login {
             display: flex;             /* Esnek kutu yapısı */
-            justify-content: space-between; /* İki uca yasla (Biri sola, biri sağa) */
+            justify-content: space-between; /* İki uca yasla */
             align-items: center;       /* Dikeyde ortala */
         }
 
         /* Linklerin listesi (ul) */
         .nav_links {
-            list-style: none;          /* Noktaları kaldır */
+            list-style: none;
             display: flex;             /* Linkleri yan yana diz */
             gap: 25px;                 /* Linkler arası boşluk */
         }
 
         /* Linklerin kendisi (a) */
         .nav_links li a {
-            text-decoration: none;     /* Alt çizgiyi kaldır */
-            color: #fff;               /* Yazı rengi */
+            text-decoration: none;
+            color: #fff;
             font-family: 'Montserrat', sans-serif;
             font-weight: 500;
             transition: color 0.3s ease;
         }
 
         .nav_links li a:hover {
-            color: #24caac;            /* Üzerine gelince renk değişimi */
+            color: #24caac;
         }
 
         .logo h2 a {
@@ -60,13 +63,13 @@
             
             <ul class="nav_links">
                 <li><a href="index.html">Ana Sayfa</a></li>
-                <li><a href="/public/hakkında.html">Hakkında</a></li>
+                <li><a href="hakkında.html">Hakkında</a></li>
                 <li><a href="login.html">Giriş Yap</a></li>
-                <li><a href="/public/kayıt.html">Kayıt Ol</a></li>
+                <li><a href="kayıt.html">Kayıt Ol</a></li>
             </ul>
         </div>
     </header>
-git push -u origin main
+
     <section id="anasayfa">
         <div class="inner_anasayfa">
             <div class="child_anasayfa">
@@ -75,7 +78,8 @@ git push -u origin main
                 <button class="btn"><a href="kayit.html" style="text-decoration: none; color: black;">Create An Account</a></button>
             </div>
             <div class="child_anasayfa"></div>
-            <img src="/img/Mugla_Sitki_Kocman_University_logo_imtiyaz_31711e8adf.png" alt="">
+            
+            <img src="img/Mugla_Sitki_Kocman_University_logo_imtiyaz_31711e8adf.png" alt="">
         </div>
      </section>
      
