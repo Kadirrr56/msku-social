@@ -174,13 +174,14 @@
                 const userCredential = await createUserWithEmailAndPassword(auth, tempUserData.email, tempUserData.password);
                 const user = userCredential.user;
 
-                // Firestore Veri Yazma (Kişi aramada çıkması için)
+                // Firestore Veri Yazma (Kişi aramada çıkması için GÜNCELLENDİ)
+                // Türkçe karakter desteği için toLocaleLowerCase('tr') eklendi.
                 await setDoc(doc(db, "users", user.uid), {
                     username: tempUserData.username,
                     email: tempUserData.email,
                     uid: user.uid,
                     photoURL: "https://i.pravatar.cc/150?img=12",
-                    searchKey: tempUserData.username.toLowerCase(),
+                    searchKey: tempUserData.username.toLocaleLowerCase('tr'), 
                     verified: true
                 });
 
