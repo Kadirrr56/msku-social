@@ -67,6 +67,7 @@
 
         /* TOGGLE SWITCH (AÇ/KAPA) */
         .setting-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; }
+        .setting-row span { font-size: 14px; }
         .toggle-switch {
             position: relative; width: 50px; height: 26px;
         }
@@ -105,7 +106,7 @@
 <body>
 
     <header>
-        <h1 onclick="window.location.href='index.html'">Just MSKU</h1>
+        <h1 onclick="window.location.href='pylsmgemini.html'">Just MSKU</h1>
         <a href="pylsmgemini.html" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Geri Dön</a>
     </header>
 
@@ -115,7 +116,7 @@
         <div class="settings-card">
             <div class="form-group">
                 <label>Mevcut Şifre</label>
-                <input type="password" class="form-input" placeholder="••••••••">
+                <input type="password" class="form-input" placeholder="••••••••" disabled>
             </div>
             <div class="form-group">
                 <label>Yeni Şifre</label>
@@ -142,21 +143,21 @@
             <div class="setting-row">
                 <span>Bildirimleri Aç</span>
                 <label class="toggle-switch">
-                    <input type="checkbox" checked>
+                    <input type="checkbox" id="toggleNotifications" onchange="savePreference('notifications', this.checked)">
                     <span class="slider"></span>
                 </label>
             </div>
             <div class="setting-row">
                 <span>E-posta Bildirimleri</span>
                 <label class="toggle-switch">
-                    <input type="checkbox">
+                    <input type="checkbox" id="toggleEmail" onchange="savePreference('emailNotifications', this.checked)">
                     <span class="slider"></span>
                 </label>
             </div>
             <div class="setting-row">
                 <span>Sadece Arkadaşlar Mesaj Atabilsin</span>
                 <label class="toggle-switch">
-                    <input type="checkbox" checked>
+                    <input type="checkbox" id="togglePrivateChat" onchange="savePreference('privateChat', this.checked)">
                     <span class="slider"></span>
                 </label>
             </div>
@@ -179,7 +180,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signOut, updatePassword as firebaseUpdatePassword, deleteUser, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, query, where, getDocs, doc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, query, where, getDocs, doc, deleteDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDLRlyPJvO5tPtnuzNAtO6H0_t7mo_3qoU",
@@ -195,26 +196,67 @@
         const db = getFirestore(app);
 
         let currentUserUid = null;
+        let userDataCache = {}; // Kullanıcının tüm verilerini saklamak için
 
-        onAuthStateChanged(auth, (user) => {
+        // --- 0. OTURUM KONTROLÜ VE VERİ YÜKLEME ---
+        onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUserUid = user.uid;
+                
+                // Kullanıcının mevcut verilerini yükle ve cache'le
+                const docSnap = await getDoc(doc(db, "users", currentUserUid));
+                if (docSnap.exists()) {
+                    userDataCache = docSnap.data();
+                    loadPreferences(userDataCache);
+                }
+
                 loadBlockedUsers();
             } else {
-                window.location.href = "index.html";
+                window.location.href = "pylsmgemini.html";
             }
         });
+
+        // --- PREFERENCES (TERCİHLER) FONKSİYONLARI ---
+
+        // 1. Düğme Durumlarını Yükle
+        function loadPreferences(data) {
+            // Varsayılan değerler tanımla (undefined ise false al)
+            document.getElementById('toggleNotifications').checked = data.prefNotifications || false;
+            document.getElementById('toggleEmail').checked = data.prefEmail || false;
+            document.getElementById('togglePrivateChat').checked = data.prefPrivateChat || false;
+        }
+
+        // 2. Tercihleri Kaydet
+        window.savePreference = async function(key, value) {
+            const fieldName = `pref${key.charAt(0).toUpperCase() + key.slice(1)}`; // Örneğin: 'notifications' -> 'prefNotifications'
+            
+            try {
+                // Firestore'da ilgili alanı anında güncelle
+                await updateDoc(doc(db, "users", currentUserUid), {
+                    [fieldName]: value
+                });
+                // Cache'i güncelle
+                userDataCache[fieldName] = value;
+                showAlert("Ayarlar kaydedildi.");
+            } catch (error) {
+                console.error("Tercih kaydedilirken hata oluştu:", error);
+                showAlert("Hata! Kaydedilemedi.");
+                // Hata durumunda düğmeyi eski haline getir
+                document.getElementById('toggle' + key.charAt(0).toUpperCase() + key.slice(1)).checked = !value;
+            }
+        }
+        
+        // --- GİZLİLİK VE GÜVENLİK FONKSİYONLARI ---
 
         // --- ENGELLENEN KULLANICILARI LİSTELE ---
         async function loadBlockedUsers() {
             const listContainer = document.getElementById('blockedList');
             listContainer.innerHTML = '<div class="empty-msg">Yükleniyor...</div>';
 
-            // "blockedUsers" koleksiyonunda, engelleyen kişi (blockedBy) BEN isem getir
             const q = query(collection(db, "blockedUsers"), where("blockedBy", "==", currentUserUid));
             const snapshot = await getDocs(q);
 
-            listContainer.innerHTML = ''; // Temizle
+            listContainer.innerHTML = ''; 
 
             if (snapshot.empty) {
                 listContainer.innerHTML = '<div class="empty-msg">Engellenen kullanıcı yok.</div>';
@@ -222,10 +264,9 @@
             }
 
             snapshot.forEach(async (docSnap) => {
-                const blockedData = docSnap.data(); // { blockedUserId: "...", blockedBy: "..." }
+                const blockedData = docSnap.data(); 
                 const blockedDocId = docSnap.id;
 
-                // Engellenen kişinin detaylarını (isim, resim) al
                 const userDoc = await getDoc(doc(db, "users", blockedData.blockedUserId));
                 
                 if (userDoc.exists()) {
@@ -250,16 +291,13 @@
         window.unblockUser = async function(docId) {
             if (confirm("Bu kişinin engelini kaldırmak istiyor musunuz?")) {
                 try {
-                    // Veritabanından sil
                     await deleteDoc(doc(db, "blockedUsers", docId));
                     
-                    // UI'dan kaldır (Efektli)
                     const row = document.getElementById(`row-${docId}`);
                     if (row) {
                         row.style.opacity = "0";
                         setTimeout(() => {
                             row.remove();
-                            // Eğer liste boşaldıysa mesaj göster
                             const list = document.getElementById('blockedList');
                             if (list.children.length === 0) {
                                 list.innerHTML = '<div class="empty-msg">Engellenen kullanıcı yok.</div>';
@@ -274,12 +312,12 @@
             }
         }
 
-        // --- DİĞER FONKSİYONLAR ---
+        // --- ŞİFRE GÜNCELLEME ---
         window.updatePassword = function() {
             const p1 = document.getElementById('newPass').value;
             const p2 = document.getElementById('confirmPass').value;
 
-            if (p1 === "" || p2 === "") return alert("Lütfen şifre giriniz.");
+            if (p1 === "" || p2 === "") return alert("Lütfen yeni şifre giriniz.");
             if (p1 !== p2) return alert("Şifreler uyuşmuyor!");
 
             const user = auth.currentUser;
@@ -289,33 +327,38 @@
                     document.getElementById('newPass').value = "";
                     document.getElementById('confirmPass').value = "";
                 }).catch((error) => {
-                    alert("Hata (Yeniden giriş yapmanız gerekebilir): " + error.message);
+                    // Firebase Auth'un yeniden kimlik doğrulama gereksinimi nedeniyle bu hata sık görülür.
+                    alert("Hata! Güvenlik nedeniyle tekrar giriş yapmanız gerekebilir. Lütfen çıkış yapıp tekrar deneyin.");
                 });
             }
         }
 
+        // --- TEHLİKELİ BÖLGE FONKSİYONLARI ---
         window.performLogout = function() {
             if(confirm("Çıkış yapmak istediğinize emin misiniz?")) {
                 signOut(auth).then(() => {
-                    window.location.href = "index.html";
+                    window.location.href = "pylsmgemini.html"; // Ana sayfaya yönlendir
                 });
             }
         }
 
         window.deleteAccount = function() {
-            if(confirm("DİKKAT! Hesabınız silinecek. Devam?")) {
+            if(confirm("DİKKAT! Hesabınız silinecek. Bu işlem geri alınamaz. Emin misiniz?")) {
                 const user = auth.currentUser;
                 if (user) {
+                    // Not: Gerçek bir uygulamada, bu işlemden önce Firestore'daki tüm verileri (postlar, yorumlar, ilişkiler) silmek gerekir.
                     deleteUser(user).then(() => {
                         alert("Hesabınız silindi.");
-                        window.location.href = "index.html";
+                        window.location.href = "pylsmgemini.html";
                     }).catch((error) => {
-                        alert("Güvenlik nedeniyle tekrar giriş yapmanız gerekebilir.");
+                        // Yeniden kimlik doğrulama hatası
+                        alert("Hata! Hesabınızı silmek için güvenlik nedeniyle tekrar giriş yapmanız gerekebilir.");
                     });
                 }
             }
         }
 
+        // --- YARDIMCI BİLDİRİM FONKSİYONU ---
         function showAlert(msg) {
             const box = document.getElementById('alertBox');
             box.innerText = msg;
