@@ -24,19 +24,11 @@
         .search-item { padding: 12px 15px; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: 0.2s; border-bottom: 1px solid #222; }
         .search-item:last-child { border-bottom: none; }
         .search-item:hover { background: #24caac; color: #000; }
-        .search-item img { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; background: white; } /* Beyaz Arka Plan */
+        .search-item img { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; background: white; }
         .search-item span { font-size: 13px; font-weight: 600; }
 
-        .request-box { display: flex; align-items: center; background: #333; padding: 8px 15px; border-radius: 20px; cursor: pointer; transition: 0.3s; white-space: nowrap; gap: 5px; }
+        .request-box { display: flex; align-items: center; background: #333; padding: 8px 15px; border-radius: 20px; cursor: pointer; transition: 0.3s; white-space: nowrap; }
         .request-box:hover { background: #24caac; color: #000; }
-        .request-box.has-new i { color: #ff4b4b; animation: pulse 1.5s infinite; }
-        
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1); }
-        }
-
         .user-profile-container { position: relative; }
         .user-profile-mini { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 5px 10px; border-radius: 20px; transition: 0.2s; }
         .user-profile-mini:hover { background-color: #333; }
@@ -203,11 +195,11 @@
             header { padding: 0 15px; }
             header h1 { font-size: 18px; }
             
-            /* MOBİL ARAMA ÇUBUĞU DÜZENLEMESİ */
+            /* MOBİL ARAMA ÇUBUĞU DÜZENLEMESİ (ÖNEMLİ) */
             .header-search { width: 40px; padding: 8px; justify-content: center; background: transparent;}
             .header-search:focus-within { width: 200px; background: #333; position: absolute; left: 10px; z-index: 1010; }
             .header-search input { 
-                display: block; 
+                display: block; /* Gizli değil, sadece dar */
                 width: 0; 
                 opacity: 0; 
                 padding: 0; 
@@ -272,9 +264,8 @@
                 <div id="searchResults" class="search-results-dropdown"></div>
             </div>
 
-            <div class="request-box" id="requestBoxBtn" onclick="window.location.href='istekler.html'">
-                 <i class="fa-solid fa-heart" id="reqIcon"></i>
-                 <span id="navRequestCount">İstekler (0)</span>
+            <div class="request-box" onclick="window.location.href='profil.html'">
+                 <i class="fa-solid fa-heart"></i><span id="navRequestCount">İstekler (0)</span>
             </div>
 
             <div class="user-profile-container">
@@ -331,32 +322,41 @@
 
             <div id="chat" class="section">
                 <div class="chat-interface">
-                    <div id="chatHeader" style="padding: 15px; border-bottom: 1px solid #333; display: flex; align-items: center; gap: 10px; background: #222;">
-                        <img id="chatHeaderImg" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=" style="width: 35px; height: 35px; border-radius: 50%; opacity:0; background:white;">
-                        <div>
-                            <div id="chatHeaderName" style="font-weight: bold; font-size:14px;">Mesajlar</div>
-                            <div id="chatHeaderStatus" style="font-size: 11px; color: #888;"></div>
+                    
+                    <div id="chatContactListScreen" style="padding: 20px; display: flex; flex-direction: column; height: 100%;">
+                        <h3 style="color: #24caac; margin-bottom: 15px;">Sohbetler</h3>
+                        <div id="chatPageContactList" style="overflow-y: auto; flex: 1;">
+                            <div style="color: #666; font-size: 13px; text-align: center;">Kişiler yükleniyor...</div>
                         </div>
                     </div>
-                    <div class="chat-window" id="chatBox">
-                        <div class="msg incoming">Bir sohbet başlatmak için yan menüden (veya mobilde aşağıdan) bir kişi seç.</div>
+
+                    <div id="activeChatScreen" style="display: none; flex-direction: column; height: 100%;">
                         
-                        <div id="mobileContactList">
-                            <div style="font-size:12px; color:#24caac; margin-bottom:10px; font-weight:bold;">KİŞİLERİM (Sohbet Başlat)</div>
-                            <div id="mobileContactsInner">
-                                <div style="color:#666; font-size:12px;">Kişiler yükleniyor...</div>
+                        <div id="chatHeader" style="padding: 10px 15px; border-bottom: 1px solid #333; display: flex; align-items: center; gap: 10px; background: #222;">
+                            <button onclick="closeActiveChat()" style="background: none; border: none; color: #ccc; cursor: pointer; font-size: 18px; margin-right: 5px;">
+                                <i class="fa-solid fa-arrow-left"></i>
+                            </button>
+                            <img id="chatHeaderImg" src="" style="width: 35px; height: 35px; border-radius: 50%; background: white;">
+                            <div>
+                                <div id="chatHeaderName" style="font-weight: bold; font-size:14px; color: white;">...</div>
+                                <div style="font-size: 10px; color: #24caac;">Çevrimiçi</div>
                             </div>
                         </div>
+
+                        <div class="chat-window" id="chatBox" style="flex: 1; padding: 15px; overflow-y: auto;">
+                            </div>
+                        
+                        <div id="replyPreviewBar" class="reply-preview-bar" style="display:none; background:#222; border-top:1px solid #24caac; padding:5px 10px; font-size:12px; color:#aaa; justify-content:space-between; align-items:center;">
+                            <span id="replyToText">Yanıtlanıyor...</span>
+                            <span style="cursor:pointer; font-weight:bold;" onclick="cancelReply()">X</span>
+                        </div>
+
+                        <div class="chat-input-area">
+                            <input type="text" id="chatMsgInput" placeholder="Bir mesaj yaz...">
+                            <button onclick="sendChatMessage()"><i class="fa-solid fa-paper-plane"></i></button>
+                        </div>
                     </div>
-                    
-                    <div id="replyPreviewBar" class="reply-preview-bar" style="display:none; background:#222; border-top:1px solid #24caac; padding:5px 10px; font-size:12px; color:#aaa; justify-content:space-between; align-items:center;">
-                        <span id="replyToText">Yanıtlanıyor...</span>
-                        <span style="cursor:pointer; font-weight:bold;" onclick="cancelReply()">X</span>
-                    </div>
-                    <div class="chat-input-area">
-                        <input type="text" id="chatMsgInput" placeholder="Mesaj yaz...">
-                        <button onclick="sendChatMessage()"><i class="fa-solid fa-paper-plane"></i></button>
-                    </div>
+
                 </div>
             </div>
 
@@ -610,6 +610,7 @@
 
         const defaultUserImg = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=";
 
+        // OTURUM KONTROLÜ
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUserUid = user.uid;
@@ -619,11 +620,17 @@
                 if (docSnap.exists()) {
                     myUser = docSnap.data();
                     myUser.uid = user.uid;
+
+                    // --- EKSİK VERİ TAMİRİ ---
                     if (!myUser.searchKey) {
                         const searchKeyGen = myUser.username ? myUser.username.toLowerCase() : user.email.split('@')[0].toLowerCase();
-                        await updateDoc(userDocRef, { searchKey: searchKeyGen });
+                        await updateDoc(userDocRef, {
+                            searchKey: searchKeyGen
+                        });
+                        console.log("Kullanıcı searchKey onarıldı.");
                     }
                 } else {
+                    // --- DÖKÜMANI OLMAYAN KULLANICIYI OLUŞTUR ---
                     const usernameGen = user.email.split('@')[0];
                     const newUserData = {
                         uid: user.uid,
@@ -633,13 +640,18 @@
                         searchKey: usernameGen.toLowerCase(),
                         createdAt: serverTimestamp()
                     };
+                    
                     await setDoc(userDocRef, newUserData);
                     myUser = newUserData;
+                    console.log("Eksik kullanıcı dökümanı oluşturuldu.");
                 }
 
                 document.getElementById('userNameDisplay').textContent = myUser.username;
+                
                 const headerImg = document.getElementById('headerProfileImg');
-                if (headerImg) headerImg.src = myUser.photoURL || defaultUserImg;
+                if (headerImg) {
+                    headerImg.src = myUser.photoURL || defaultUserImg;
+                }
                 
                 if(user.email === "abdulkadiroluc@posta.mu.edu.tr") {
                     document.getElementById('superAdminBtn').style.display = "flex";
@@ -650,98 +662,27 @@
                 loadGlobalPosts(); 
                 loadExploreMixed(); 
                 loadCommunities();
+
+                // --- URL'DEN SOHBET YAKALAMA (YENİ EKLENEN KISIM) ---
+                const params = new URLSearchParams(window.location.search);
+                const chatTargetUid = params.get('chatUser');
+
+                if (chatTargetUid) {
+                    showSection('chat');
+                    const uDoc = await getDoc(doc(db, "users", chatTargetUid));
+                    if (uDoc.exists()) {
+                        const uData = uDoc.data();
+                        loadChat(uData.username, uData.photoURL || defaultUserImg, chatTargetUid);
+                    }
+                    window.history.replaceState({}, document.title, "pylsmgemini.html");
+                }
+                // -----------------------------------------------------
+
             } else {
                 window.location.href = "login.html";
             }
         });
 
-        // --- İSTEK SAYACI GÜNCELLEME (Relationships status: 'pending' olanlar) ---
-        function subscribeToRequests(myUid) { 
-            // DÜZELTME: Artık 'relationships' tablosunu dinliyoruz
-            // Bana gelen (followingUid == ben) ve durumu 'pending' olanlar
-            const q = query(
-                collection(db, "relationships"), 
-                where("followingUid", "==", myUid),
-                where("status", "==", "pending")
-            ); 
-            
-            onSnapshot(q, (snapshot) => { 
-                const count = snapshot.size;
-                const countSpan = document.getElementById('navRequestCount');
-                const box = document.getElementById('requestBoxBtn');
-                
-                countSpan.innerText = `İstekler (${count})`; 
-                
-                // Vurgulama
-                if (count > 0) {
-                    box.classList.add('has-new');
-                    countSpan.style.color = "#ff4b4b";
-                    countSpan.style.fontWeight = "bold";
-                } else {
-                    box.classList.remove('has-new');
-                    countSpan.style.color = "#fff";
-                    countSpan.style.fontWeight = "normal";
-                }
-            }); 
-        }
-
-        // --- TAKİPÇİ LİSTESİ (Sadece status: 'accepted' olanlar) ---
-        async function loadSidebarLists(currentUid) { 
-            const followersListDiv = document.getElementById('followersList'); 
-            const contactsListDiv = document.getElementById('contactsList'); 
-            const mobileContactsDiv = document.getElementById('mobileContactsInner'); 
-            const shareListDiv = document.getElementById('shareModalList'); 
-            const countSpan = document.getElementById('sidebarFollowerCount'); 
-            
-            // DÜZELTME: Sadece onaylanmış (accepted) takipçileri getir
-            const q = query(
-                collection(db, "relationships"), 
-                where("followingUid", "==", currentUid),
-                where("status", "==", "accepted")
-            ); 
-            
-            const snapshot = await getDocs(q); 
-            
-            countSpan.innerText = `(${snapshot.size})`; 
-            followersListDiv.innerHTML = ''; 
-            contactsListDiv.innerHTML = ''; 
-            shareListDiv.innerHTML = ''; 
-            if(mobileContactsDiv) mobileContactsDiv.innerHTML = '';
-
-            if (snapshot.empty) { 
-                const emptyHtml = '<div style="color:#888;padding:10px;text-align:center;">Kimse yok.</div>';
-                followersListDiv.innerHTML = emptyHtml; 
-                contactsListDiv.innerHTML = emptyHtml; 
-                if(mobileContactsDiv) mobileContactsDiv.innerHTML = emptyHtml;
-                return; 
-            } 
-            
-            snapshot.forEach(async (docSnap) => { 
-                const rel = docSnap.data(); 
-                const userDoc = await getDoc(doc(db, "users", rel.followerUid)); 
-                if(userDoc.exists()) { 
-                    const uData = userDoc.data(); 
-                    const uImg = uData.photoURL || defaultUserImg; 
-                    
-                    // Takipçi Listesi
-                    followersListDiv.insertAdjacentHTML('beforeend', `<div class="friend-row" onclick="goToProfile('${rel.followerUid}')" style="cursor:pointer;"><div class="friend-info"><img src="${uImg}"><span>${uData.username}</span></div><button class="remove-follow-btn" onclick="removeFollower('${docSnap.id}')" style="background:none; border:none; color:#ff4b4b; cursor:pointer;">Çıkar</button></div>`); 
-                    
-                    const contactId = `contact-${rel.followerUid}`; 
-                    
-                    // DESKTOP LİSTE
-                    contactsListDiv.insertAdjacentHTML('beforeend', `<div class="friend-row" id="${contactId}" onclick="loadChat('${uData.username}', '${uImg}', '${rel.followerUid}')" style="cursor:pointer; position:relative;"><div class="friend-info"><div style="position:relative;"><img src="${uImg}"><div style="position:absolute;bottom:0;right:0;width:10px;height:10px;background:#24caac;border-radius:50%;"></div></div><div><div style="font-size:14px;">${uData.username}</div><div style="font-size:11px;color:#888;">Çevrimiçi</div></div></div><div id="badge-${rel.followerUid}" class="notification-badge"></div><i class="fa-regular fa-paper-plane" style="color:#666;"></i></div>`); 
-                    
-                    // MOBİL İÇİN LİSTE (CHAT İÇİNDE GÖRÜNÜR)
-                    if(mobileContactsDiv) {
-                        mobileContactsDiv.insertAdjacentHTML('beforeend', `<div class="friend-row" onclick="loadChat('${uData.username}', '${uImg}', '${rel.followerUid}')" style="cursor:pointer; padding:10px; background:#222; margin-bottom:5px; border-radius:8px;"><div class="friend-info"><img src="${uImg}"><span>${uData.username}</span></div><i class="fa-solid fa-comment-dots" style="color:#24caac;"></i></div>`);
-                    }
-
-                    shareListDiv.insertAdjacentHTML('beforeend', `<div class="share-contact" onclick="shareWithContact('${uData.username}', '${uImg}', '${rel.followerUid}')"><div class="share-info"><img src="${uImg}"><span>${uData.username}</span></div><button class="share-send-btn">Gönder</button></div>`); 
-                } 
-            }); 
-        }
-
-        // --- DİĞER FONKSİYONLAR (Aynen Korundu) ---
         const mskuData = { 
             "Mühendislik Fakültesi": { icon: "fa-solid fa-laptop-code", bolumler: ["Elektrik-Elektronik Mühendisliği","Bilgisayar Mühendisliği", "İnşaat Mühendisliği", "Yazılım Mühendisliği", "Maden Mühendisliği"] }, 
             "Tıp Fakültesi": { icon: "fa-solid fa-user-doctor", bolumler: ["Tıp", "Cerrahi Tıp Bilimleri", "Dahili Tıp Bilimleri", "Temel Tıp Bilimleri"] },
@@ -756,6 +697,7 @@
             "Güzel Sanatlar Fakültesi": { icon: "fa-solid fa-palette", bolumler: ["Resim", "Grafik", "Heykel", "Seramik", "Sahne Sanatları"] }
         };
 
+        // NOTLAR FONKSİYONLARI
         window.renderFaculties = () => { 
             document.getElementById('facultyGrid').style.display = 'grid';
             document.getElementById('deptList').style.display = 'none';
@@ -971,6 +913,7 @@
             });
         }
 
+        // --- YENİ SİLME MODU VE SEÇİM ---
         let isDeleteMode = false;
         let selectedComms = new Set();
 
@@ -1176,8 +1119,8 @@
                     <div class="post-options">
                         <button class="options-btn" onclick="toggleMenu('cmenu-${postId}')"><i class="fa-solid fa-ellipsis"></i></button>
                         <div id="cmenu-${postId}" class="options-menu">
-                            <div class="option-item" onclick="toggleLike('${postId}')">${isLiked ? "Vazgeç" : "Beğen"}</div>
-                            ${menuContent}
+                            <div class="option-item" onclick="toggleLike('${postId}')">${likeText}</div>
+                            ${menuOptions}
                         </div>
                     </div>
                 </div>
@@ -1397,29 +1340,109 @@
             else if(sectionId === 'communities') { loadCommunities(); if(cs) cs.style.display = 'block'; }
         }
 
-        // --- İSTEKLER İÇİN ARTIK subscribeToRequests fonksiyonu yukarıda tanımlandı ---
+        function subscribeToRequests(myUid) { 
+            const q = query(collection(db, "friendRequests"), where("toUid", "==", myUid)); 
+            onSnapshot(q, (snapshot) => { 
+                document.getElementById('navRequestCount').innerText = `İstekler (${snapshot.size})`; 
+            }); 
+        }
         
+        async function loadSidebarLists(currentUid) { 
+            const followersListDiv = document.getElementById('followersList'); 
+            const contactsListDiv = document.getElementById('contactsList'); 
+            const shareListDiv = document.getElementById('shareModalList'); 
+            const countSpan = document.getElementById('sidebarFollowerCount'); 
+            
+            // YENİ: Chat sayfasındaki ana liste
+            const chatPageListDiv = document.getElementById('chatPageContactList');
+            
+            const q = query(collection(db, "relationships"), where("followingUid", "==", currentUid)); 
+            const snapshot = await getDocs(q); 
+            
+            countSpan.innerText = `(${snapshot.size})`; 
+            followersListDiv.innerHTML = ''; 
+            contactsListDiv.innerHTML = ''; 
+            shareListDiv.innerHTML = ''; 
+            if(chatPageListDiv) chatPageListDiv.innerHTML = ''; // Listeyi temizle
+
+            if (snapshot.empty) { 
+                const emptyHtml = '<div style="color:#888;padding:10px;text-align:center;">Kimse yok.</div>';
+                followersListDiv.innerHTML = emptyHtml; 
+                contactsListDiv.innerHTML = emptyHtml; 
+                if(chatPageListDiv) chatPageListDiv.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">Henüz mesajlaşacak kimse yok.<br>Birilerini takip etmeye başla!</div>';
+                return; 
+            } 
+            
+            snapshot.forEach(async (docSnap) => { 
+                const rel = docSnap.data(); 
+                const userDoc = await getDoc(doc(db, "users", rel.followerUid)); 
+                if(userDoc.exists()) { 
+                    const uData = userDoc.data(); 
+                    const uImg = uData.photoURL || defaultUserImg; 
+                    
+                    // Sidebar Takipçi Listesi
+                    followersListDiv.insertAdjacentHTML('beforeend', `<div class="friend-row" onclick="goToProfile('${rel.followerUid}')" style="cursor:pointer;"><div class="friend-info"><img src="${uImg}"><span>${uData.username}</span></div><button class="remove-follow-btn" onclick="removeFollower('${docSnap.id}')" style="background:none; border:none; color:#ff4b4b; cursor:pointer;">Çıkar</button></div>`); 
+                    
+                    // Sidebar Hızlı Mesaj (Contacts)
+                    contactsListDiv.insertAdjacentHTML('beforeend', `<div class="friend-row" onclick="loadChat('${uData.username}', '${uImg}', '${rel.followerUid}')" style="cursor:pointer;"><div class="friend-info"><div style="position:relative;"><img src="${uImg}"><div style="position:absolute;bottom:0;right:0;width:10px;height:10px;background:#24caac;border-radius:50%;"></div></div><div><div style="font-size:14px;">${uData.username}</div><div style="font-size:11px;color:#888;">Çevrimiçi</div></div></div><i class="fa-regular fa-paper-plane" style="color:#666;"></i></div>`); 
+                    
+                    // YENİ: Chat Sayfası Ana Listesi (Büyük Liste)
+                    if(chatPageListDiv) {
+                        chatPageListDiv.insertAdjacentHTML('beforeend', `
+                            <div class="friend-row" onclick="loadChat('${uData.username}', '${uImg}', '${rel.followerUid}')" style="cursor:pointer; padding:15px; background:#222; margin-bottom:10px; border-radius:10px; border:1px solid #333;">
+                                <div class="friend-info">
+                                    <img src="${uImg}" style="width:45px; height:45px;">
+                                    <div>
+                                        <div style="font-size:15px; font-weight:bold; color:white;">${uData.username}</div>
+                                        <div style="font-size:12px; color:#aaa;">Sohbeti başlatmak için dokun</div>
+                                    </div>
+                                </div>
+                                <i class="fa-solid fa-chevron-right" style="color:#24caac;"></i>
+                            </div>
+                        `);
+                    }
+
+                    // Paylaşım Listesi
+                    shareListDiv.insertAdjacentHTML('beforeend', `<div class="share-contact" onclick="shareWithContact('${uData.username}', '${uImg}', '${rel.followerUid}')"><div class="share-info"><img src="${uImg}"><span>${uData.username}</span></div><button class="share-send-btn">Gönder</button></div>`); 
+                } 
+            }); 
+        }
+
         function getChatRoomId(uid1, uid2) { return [uid1, uid2].sort().join("_"); }
         
         window.loadChat = function(name, imgUrl, targetUid) { 
+            // 1. Ekranları Değiştir (Listeyi Gizle, Sohbeti Aç)
+            document.getElementById('chatContactListScreen').style.display = 'none';
+            document.getElementById('activeChatScreen').style.display = 'flex';
+
+            // 2. Başlık Bilgilerini Güncelle
             document.getElementById('chatHeaderName').innerText = name; 
             document.getElementById('chatHeaderImg').src = imgUrl; 
-            document.getElementById('chatHeaderImg').style.opacity = "1"; 
-            document.getElementById('mobileContactList').style.display = 'none'; 
+            
+            // 3. Değişkenleri Ayarla
             currentChatPartnerUid = targetUid; 
             cancelReply(); 
-            const badge = document.getElementById(`badge-${targetUid}`); 
-            if(badge) badge.style.display = 'none'; 
-            if (activeChatUnsubscribe) activeChatUnsubscribe(); 
-            const roomId = getChatRoomId(currentUserUid, targetUid); 
-            const chatBox = document.getElementById('chatBox'); 
             
-            chatBox.innerHTML = ''; 
+            // 4. Eski dinleyiciyi durdur (Önceki sohbetle bağını kopar)
+            if (activeChatUnsubscribe) {
+                activeChatUnsubscribe();
+                activeChatUnsubscribe = null;
+            }
 
+            // 5. Mesaj Kutusunu TEMİZLE (Yeni pencere hissi için)
+            const chatBox = document.getElementById('chatBox'); 
+            chatBox.innerHTML = '<div style="text-align:center; color:#555; margin-top:20px;"><i class="fa-solid fa-spinner fa-spin"></i> Mesajlar yükleniyor...</div>';
+
+            // 6. Yeni Mesajları Getir
+            const roomId = getChatRoomId(currentUserUid, targetUid); 
             const q = query(collection(db, "chats", roomId, "messages"), orderBy("timestamp", "asc")); 
+            
             activeChatUnsubscribe = onSnapshot(q, (snapshot) => { 
-                chatBox.innerHTML = ''; 
-                if(snapshot.empty) { chatBox.innerHTML = '<div style="text-align:center;color:#555;margin-top:20px;">Henüz mesaj yok.</div>'; } 
+                chatBox.innerHTML = ''; // Yükleniyor yazısını kaldır
+                
+                if(snapshot.empty) { 
+                    chatBox.innerHTML = '<div style="text-align:center;color:#555;margin-top:20px;">Burada henüz mesaj yok.<br>İlk mesajı sen at! 👋</div>'; 
+                } 
                 
                 snapshot.forEach(doc => { 
                     const msg = doc.data(); 
@@ -1606,7 +1629,7 @@
             const likeCount = post.likes || 0; 
             const likeText = liked ? "Vazgeç" : "Beğen"; 
             const heartIcon = liked ? 'fa-solid' : 'fa-regular'; 
-            const likeClass = liked ? 'liked' : ''; 
+            const likeClass = liked ? 'liked' : '';
             
             newPostDiv.innerHTML = `
             <div class="post-header">
@@ -1916,45 +1939,18 @@
             if(e.target.id === 'commModal') closeCommModal();
             if(e.target.id === 'newsDetailModal') closeNewsDetailModal();
         }
-        
-        // --- CHAT LİSTESİ İÇİN PAYLAŞIM MODALINI YÜKLE ---
-        async function loadShareList() { 
-            const list = document.getElementById('shareModalList'); 
-            list.innerHTML = 'Yükleniyor...'; 
+        window.closeActiveChat = function() {
+            // Sohbeti gizle, Listeyi göster
+            document.getElementById('activeChatScreen').style.display = 'none';
+            document.getElementById('chatContactListScreen').style.display = 'flex';
             
-            // SADECE TAKİPÇİLER (ACCEPTED)
-            const q = query(
-                collection(db, "relationships"), 
-                where("followingUid", "==", currentUserUid), 
-                where("status", "==", "accepted")
-            ); 
-            const snap = await getDocs(q); 
-            
-            list.innerHTML = ''; 
-            if(snap.empty) { 
-                list.innerHTML = '<div style="text-align:center; padding:10px; color:#888;">Takip ettiğin kimse yok.</div>'; 
-                return; 
-            } 
-            
-            snap.forEach(async (docSnap) => { 
-                const rel = docSnap.data(); 
-                const u = await getDoc(doc(db, "users", rel.followerUid)); 
-                if(u.exists()) { 
-                    const ud = u.data(); 
-                    const uImg = ud.photoURL || defaultUserImg; 
-                    list.innerHTML += `
-                        <div class="share-contact" onclick="shareWithContact('${ud.username}', '${uImg}', '${rel.followerUid}')">
-                            <div class="share-info">
-                                <img src="${uImg}">
-                                <span>${ud.username}</span>
-                            </div>
-                            <button class="share-send-btn">Gönder</button>
-                        </div>
-                    `; 
-                } 
-            }); 
+            // Aktif dinleyiciyi durdur (performans için)
+            if (activeChatUnsubscribe) {
+                activeChatUnsubscribe();
+                activeChatUnsubscribe = null;
+            }
+            currentChatPartnerUid = null;
         }
-
     </script>
 </body>
 </html>
