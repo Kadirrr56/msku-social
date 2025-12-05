@@ -32,7 +32,8 @@
         .delete-btn:hover { color: #ff4b4b; }
 
         .user-name { font-size: 22px; font-weight: bold; margin-bottom: 5px; color: #fff; text-align: center; }
-        .user-title { font-size: 13px; color: #888; margin-bottom: 20px; }
+        .user-title { font-size: 14px; color: #24caac; margin-bottom: 5px; font-weight: 600; letter-spacing: 1px;}
+        .user-email { font-size: 12px; color: #888; margin-bottom: 20px; font-family: monospace; background: #222; padding: 2px 8px; border-radius: 5px;}
 
         .bio-section { width: 100%; max-width: 500px; text-align: center; margin-bottom: 20px; }
         .bio-text { color: #ccc; line-height: 1.5; font-size: 14px; min-height: 30px; }
@@ -150,8 +151,8 @@
             </div>
 
             <div class="user-name" id="profileNameDisplay">Yükleniyor...</div>
-            <div class="user-title">MSKU Öğrencisi</div>
-
+            <div class="user-title">MSKU</div>
+            <div id="profileEmailDisplay" class="user-email">...</div>
             <div class="bio-section">
                 <p id="bioText" class="bio-text">Henüz bir biyografi eklenmedi.</p>
                 <textarea id="bioInput" class="bio-input" rows="3"></textarea>
@@ -258,9 +259,7 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
         
-        // --- DEĞİŞTİRİLEN KISIM ---
         const defaultAvatar = "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png";
-        // ---------------------------
         
         let currentUserUid = null;
         let myUser = null;
@@ -293,6 +292,9 @@
             const bioInp = document.getElementById('bioInput');
             bioSec.innerText = myUser.bio || "Henüz bir biyografi eklenmedi.";
             bioInp.value = myUser.bio || "";
+
+            // --- MAİL ADRESİNİ YAZDIR ---
+            document.getElementById('profileEmailDisplay').innerText = myUser.email || "";
 
             // Gizli Hesap Toggle Durumu
             const toggle = document.getElementById('privateAccountToggle');
@@ -666,7 +668,7 @@
             removeImage();
         }
 
-        // PAYLAŞIM
+        // PAYLAŞIM (SOHBETE GÖNDERME - GÜNCELLENDİ)
         let currentPostIdToShare = null;
         window.openShareModal = function(postId) {
             currentPostIdToShare = postId;
@@ -677,42 +679,90 @@
             document.getElementById('shareModal').style.display = 'none';
             currentPostIdToShare = null;
         }
+
+        // Paylaşım listesini (Takip Ettiklerimi) Yükle
         async function loadShareList() {
             const list = document.getElementById('shareModalList');
-            list.innerHTML = 'Yükleniyor...';
+            list.innerHTML = '<div style="text-align:center;color:#888;">Yükleniyor...</div>';
+            
             // Sadece takip ettiğim (accepted) kişilere gönderebilirim
             const q = query(
                 collection(db, "relationships"), 
-                where("followerUid", "==", currentUserUid),
+                where("followerUid", "==", currentUserUid), // Ben takipçiyim
                 where("status", "==", "accepted")
             );
+            
             const snap = await getDocs(q);
             list.innerHTML = '';
+            
             if(snap.empty) {
                 list.innerHTML = '<div style="text-align:center; padding:10px; color:#888;">Takip ettiğin kimse yok.</div>';
                 return;
             }
+
             snap.forEach(async (d) => {
                 const rel = d.data();
+                // Takip ettiğim kişinin verisini çek (followingUid)
                 const u = await getDoc(doc(db, "users", rel.followingUid));
+                
                 if(u.exists()) {
                     const ud = u.data();
                     const uImg = ud.photoURL || defaultAvatar;
+                    
                     list.innerHTML += `
-                        <div class="share-contact" onclick="shareWithContact('${ud.username}')">
-                            <div class="share-info">
-                                <img src="${uImg}">
+                        <div class="share-contact" style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #333;">
+                            <div class="share-info" style="display:flex; align-items:center; gap:10px;">
+                                <img src="${uImg}" style="width:35px; height:35px; border-radius:50%; object-fit:cover;">
                                 <span>${ud.username}</span>
                             </div>
-                            <button class="user-list-btn">Gönder</button>
+                            <button class="user-list-btn" onclick="shareWithContact('${ud.username}', '${ud.uid}')" style="background:#24caac; border:none; padding:5px 15px; border-radius:15px; font-weight:bold; cursor:pointer;">
+                                Gönder
+                            </button>
                         </div>
                     `;
                 }
             });
         }
-        window.shareWithContact = function(contactName) {
-            alert(contactName + " kişisine gönderildi!");
-            closeShareModal();
+
+        // Gönderiyi Sohbet Mesajı Olarak İlet
+        window.shareWithContact = async function(contactName, targetUid) {
+            if (!currentPostIdToShare) return;
+
+            try {
+                // A) Gönderi verisini çek
+                const pDoc = await getDoc(doc(db, "posts", currentPostIdToShare));
+                if (!pDoc.exists()) {
+                    alert("Hata: Gönderi bulunamadı.");
+                    return;
+                }
+                const pData = pDoc.data();
+
+                // B) Sohbet Odası ID'sini Oluştur
+                const roomId = [currentUserUid, targetUid].sort().join("_");
+
+                // C) Mesaj Olarak Kaydet
+                await addDoc(collection(db, "chats", roomId, "messages"), {
+                    senderId: currentUserUid,
+                    timestamp: serverTimestamp(),
+                    isSharedPost: true, // Bu bir paylaşımdır
+                    likes: 0,
+                    likedBy: [],
+                    postData: {
+                        id: currentPostIdToShare,
+                        text: pData.text || "",
+                        media: pData.mediaUrl || pData.image || null, // mediaUrl yoksa image kullan
+                        type: pData.type || 'text',
+                        owner: pData.username
+                    }
+                });
+
+                alert(`${contactName} kişisine gönderildi!`);
+                closeShareModal();
+
+            } catch (error) {
+                console.error("Paylaşım hatası:", error);
+                alert("Gönderilirken bir hata oluştu.");
+            }
         }
 
         // PROFİL DÜZENLEME
