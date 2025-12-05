@@ -258,7 +258,9 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
         
-        const defaultAvatar = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=";
+        // --- DEĞİŞTİRİLEN KISIM ---
+        const defaultAvatar = "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png";
+        // ---------------------------
         
         let currentUserUid = null;
         let myUser = null;
@@ -273,7 +275,7 @@
                     document.getElementById('profileNameDisplay').innerText = myUser.username || "Kullanıcı";
                     
                     loadProfileData();
-                    checkFollowRequests(); // İSTEKLERİ BURADA ÇAĞIRIYORUZ (DOĞRU)
+                    checkFollowRequests(); 
                 }
                 loadMyPosts(); 
                 updateStats(user.uid);
