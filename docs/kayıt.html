@@ -42,6 +42,16 @@
         
         .error-msg { color: #ff4b4b; font-size: 12px; margin-bottom: 10px; display: none; }
         .hidden { display: none; }
+
+        /* KVKK Alanı */
+        .kvkk-wrapper { margin: 15px 0; text-align: left; font-size: 11px; display: flex; align-items: flex-start; gap: 8px; }
+        .kvkk-wrapper input { width: 16px; height: 16px; margin: 0; cursor: pointer; }
+        .kvkk-wrapper label { cursor: pointer; color: #ccc; line-height: 1.4; }
+        .kvkk-link { color: #24caac; text-decoration: underline; font-weight: bold; cursor: pointer; }
+
+        /* MODAL */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 3000; justify-content: center; align-items: center; padding: 20px;}
+        .modal-content { background: #1a1a1a; padding: 25px; border-radius: 15px; width: 100%; max-width: 600px; border: 1px solid #333; text-align: left; max-height: 80vh; overflow-y: auto; color: #ddd;}
     </style>
 </head>
 <body>
@@ -57,6 +67,15 @@
             <input type="email" id="email" placeholder="Öğrenci E-postası (@posta.mu.edu.tr)">
             <input type="password" id="password" placeholder="Şifre">
             
+            <div class="kvkk-wrapper">
+                <input type="checkbox" id="kvkkCheckbox">
+                <label for="kvkkCheckbox">
+                    <span class="kvkk-link" onclick="document.getElementById('kvkkModal').style.display='flex'">KVKK Aydınlatma Metni</span>'ni ve 
+                    <span class="kvkk-link" onclick="document.getElementById('kvkkModal').style.display='flex'">Kullanıcı Sözleşmesi</span>'ni 
+                    okudum, anladım ve kabul ediyorum.
+                </label>
+            </div>
+
             <button id="sendCodeBtn">Doğrulama Kodu Gönder</button>
             
             <div class="link">
@@ -80,13 +99,37 @@
 
     </div>
 
+    <div id="kvkkModal" class="modal">
+        <div class="modal-content">
+            <h2 style="color: #24caac; margin-bottom: 15px; text-align: center;">Aydınlatma Metni ve Rıza Beyanı</h2>
+            <div style="font-size: 13px; line-height: 1.6;">
+                <p><strong>Veri Sorumlusu:</strong> Just MSKU Platformu Yönetimi</p>
+                <h4>1. İşlenen Kişisel Verileriniz</h4>
+                <p>Just MSKU'ya kayıt olmanız ve kullanmanız durumunda aşağıdaki verileriniz işlenmektedir:</p>
+                <ul>
+                    <li>Kimlik Bilgileri: Kullanıcı adı, Profil bilgileri.</li>
+                    <li>İletişim Bilgileri: @posta.mu.edu.tr uzantılı e-posta adresi.</li>
+                    <li>İşlem Güvenliği: Parola, IP adresi, Log kayıtları.</li>
+                    <li>Görsel ve İçerik: Profil fotoğrafı, paylaşılan gönderiler, mesajlar.</li>
+                </ul>
+                <h4>2. Kişisel Verilerin İşlenme Amacı</h4>
+                <p>Üyeliğin oluşturulması, MSKU öğrencisi olduğunun doğrulanması ve platform içi iletişimin sağlanması amacıyla işlenmektedir.</p>
+                <h4>3. Verilerin Aktarımı (Yurtdışı İzni)</h4>
+                <p>Just MSKU, altyapı olarak <strong>Google Firebase</strong> (ABD menşeli) servislerini kullanmaktadır. Bu metni onaylayarak verilerinizin Google sunucularında saklanmasına <strong>açık rıza</strong> göstermiş sayılırsınız.</p>
+            </div>
+            <div style="margin-top: 20px; text-align: center;">
+                <button onclick="document.getElementById('kvkkModal').style.display='none'" style="background: #24caac; color: #000; padding: 10px 30px;">Okudum, Kapat</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, serverTimestamp, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // --- EMAILJS BAŞLATMA (Senin Public Key'in) ---
-        emailjs.init("CYIIX3kfQyoPUedSP"); 
+        // --- EMAILJS BAŞLATMA ---
+        emailjs.init("CYIIX3kfQyoPUedSP"); // Kendi Public Key'in
 
         const firebaseConfig = {
             apiKey: "AIzaSyDLRlyPJvO5tPtnuzNAtO6H0_t7mo_3qoU",
@@ -105,94 +148,135 @@
         let tempUserData = {};
 
         // --- ADIM 1: KOD GÖNDERME ---
-        document.getElementById('sendCodeBtn').addEventListener('click', function() {
-            const username = document.getElementById('username').value;
-            const email = document.getElementById('email').value;
+        document.getElementById('sendCodeBtn').addEventListener('click', async function() {
+            const username = document.getElementById('username').value.trim();
+            const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
+            const kvkkCheck = document.getElementById('kvkkCheckbox');
             const errorDiv = document.getElementById('errorMsg1');
             const btn = this;
 
-            // Validasyonlar
+            // 1. KVKK KONTROLÜ
+            if (!kvkkCheck.checked) {
+                alert("Kayıt olabilmek için KVKK Aydınlatma Metni'ni okuyup onaylamanız gerekmektedir.");
+                return;
+            }
+
+            // 2. BOŞ ALAN KONTROLÜ
             if(username === "" || email === "" || password === "") {
                 showError(errorDiv, "Lütfen tüm alanları doldurun.");
                 return;
             }
+
+            // 3. DOMAIN KONTROLÜ
             if (!email.endsWith("@posta.mu.edu.tr")) {
                 showError(errorDiv, "Sadece @posta.mu.edu.tr uzantılı mailler kayıt olabilir.");
                 return;
             }
+
+            // 4. ŞİFRE KONTROLÜ
             if (password.length < 6) {
                 showError(errorDiv, "Şifre en az 6 karakter olmalıdır.");
                 return;
             }
 
-            // Kodu oluştur
-            generatedCode = Math.floor(100000 + Math.random() * 900000).toString();
-            tempUserData = { username, email, password };
-
-            // Butonu pasif yap
-            btn.innerText = "Kod Gönderiliyor...";
+            // Butonu pasif yap (Kontrol başlarken)
+            btn.innerText = "Kontrol Ediliyor...";
             btn.disabled = true;
 
-            // --- EMAILJS İLE GERÇEK MAİL GÖNDERME (Senin ID'lerin) ---
-            const serviceID = "service_7an2b0g"; 
-            const templateID = "template_xyh86lk"; 
+            try {
+                // --- YENİ EKLENEN KISIM: VERİTABANI KONTROLÜ ---
+                // Kullanıcı 'users' tablosunda zaten var mı?
+                const q = query(collection(db, "users"), where("email", "==", email));
+                const querySnapshot = await getDocs(q);
 
-            const templateParams = {
-                to_email: email,      
-                to_name: username,    
-                code: generatedCode   
-            };
-
-            emailjs.send(serviceID, templateID, templateParams)
-                .then(() => {
-                    alert("Doğrulama kodu e-postanıza (" + email + ") gönderildi!");
-                    document.getElementById('step1').classList.add('hidden');
-                    document.getElementById('step2').classList.remove('hidden');
-                    document.getElementById('displayEmail').innerText = email;
-                }, (err) => {
-                    console.error('EmailJS Hatası:', err);
-                    // Hata mesajı göster
-                    showError(errorDiv, "Kod gönderilemedi. " + JSON.stringify(err));
+                if (!querySnapshot.empty) {
+                    // Kayıt varsa durdur
+                    showError(errorDiv, "Bu e-posta adresi zaten sisteme kayıtlı. Giriş yapabilirsiniz.");
                     btn.innerText = "Doğrulama Kodu Gönder";
                     btn.disabled = false;
-                });
+                    return; 
+                }
+                // ------------------------------------------------
+
+                // Kayıt yoksa kod üret ve gönder
+                generatedCode = Math.floor(100000 + Math.random() * 900000).toString();
+                tempUserData = { username, email, password };
+                
+                btn.innerText = "Kod Gönderiliyor...";
+
+                // --- EMAILJS ---
+                const serviceID = "service_7an2b0g"; // Kendi ID'n
+                const templateID = "template_xyh86lk"; // Kendi ID'n
+
+                const templateParams = {
+                    to_email: email,      
+                    to_name: username,    
+                    code: generatedCode   
+                };
+
+                emailjs.send(serviceID, templateID, templateParams)
+                    .then(() => {
+                        alert("Doğrulama kodu e-postanıza (" + email + ") gönderildi!");
+                        document.getElementById('step1').classList.add('hidden');
+                        document.getElementById('step2').classList.remove('hidden');
+                        document.getElementById('displayEmail').innerText = email;
+                    }, (err) => {
+                        console.error('EmailJS Hatası:', err);
+                        showError(errorDiv, "Kod gönderilemedi. " + JSON.stringify(err));
+                        btn.innerText = "Doğrulama Kodu Gönder";
+                        btn.disabled = false;
+                    });
+
+            } catch (error) {
+                console.error("Sorgu hatası:", error);
+                showError(errorDiv, "Bir hata oluştu: " + error.message);
+                btn.innerText = "Doğrulama Kodu Gönder";
+                btn.disabled = false;
+            }
         });
 
         // --- ADIM 2: DOĞRULAMA VE KAYIT ---
         document.getElementById('verifyAndRegisterBtn').addEventListener('click', async () => {
             const userCode = document.getElementById('verificationCode').value;
             const errorDiv = document.getElementById('errorMsg2');
+            const btn = document.getElementById('verifyAndRegisterBtn');
 
             if (userCode !== generatedCode) {
                 showError(errorDiv, "Hatalı kod! Lütfen tekrar deneyin.");
                 return;
             }
+            
+            btn.innerText = "Kaydediliyor...";
+            btn.disabled = true;
 
             try {
-                // Firebase Kayıt
+                // Firebase Auth Kayıt
                 const userCredential = await createUserWithEmailAndPassword(auth, tempUserData.email, tempUserData.password);
                 const user = userCredential.user;
 
-                // Firestore Veri Yazma (Kişi aramada çıkması için GÜNCELLENDİ)
-                // Türkçe karakter desteği için toLocaleLowerCase('tr') eklendi.
+                // Firestore Veri Yazma
                 await setDoc(doc(db, "users", user.uid), {
                     username: tempUserData.username,
                     email: tempUserData.email,
                     uid: user.uid,
-                    photoURL: "https://i.pravatar.cc/150?img=12",
+                    photoURL: "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png",
                     searchKey: tempUserData.username.toLocaleLowerCase('tr'), 
-                    verified: true
+                    verified: true,
+                    isPrivate: false, // Varsayılan herkese açık
+                    createdAt: serverTimestamp()
                 });
 
-                alert("Doğrulama Başarılı! Giriş yapılıyor...");
+                alert("Kayıt Başarılı! Giriş yapılıyor...");
                 window.location.href = "pylsmgemini.html";
 
             } catch (error) {
                 console.error(error);
+                btn.innerText = "Doğrula ve Kayıt Ol";
+                btn.disabled = false;
+
                 if(error.code === "auth/email-already-in-use") {
                     alert("Bu e-posta adresi zaten kayıtlı.");
-                    location.reload();
                 } else {
                     showError(errorDiv, "Kayıt hatası: " + error.message);
                 }
