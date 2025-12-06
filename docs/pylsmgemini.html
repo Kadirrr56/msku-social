@@ -1457,7 +1457,6 @@
             const mobileContactsDiv = document.getElementById('mobileContactsInner'); 
             const shareListDiv = document.getElementById('shareModalList'); 
             const countSpan = document.getElementById('sidebarFollowerCount'); 
-            
             const chatPageListDiv = document.getElementById('chatPageContactList');
             
             const q = query(collection(db, "relationships"), where("followingUid", "==", currentUid)); 
@@ -1468,13 +1467,14 @@
             contactsListDiv.innerHTML = ''; 
             shareListDiv.innerHTML = ''; 
             if(chatPageListDiv) chatPageListDiv.innerHTML = '';
+            if(mobileContactsDiv) mobileContactsDiv.innerHTML = '';
 
             if (snapshot.empty) { 
                 const emptyHtml = '<div style="color:#888;padding:10px;text-align:center;">Kimse yok.</div>';
                 followersListDiv.innerHTML = emptyHtml; 
                 contactsListDiv.innerHTML = emptyHtml; 
                 if(mobileContactsDiv) mobileContactsDiv.innerHTML = emptyHtml;
-                if(chatPageListDiv) chatPageListDiv.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">Henüz mesajlaşacak kimse yok.<br>Birilerini takip etmeye başla!</div>';
+                if(chatPageListDiv) chatPageListDiv.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">Henüz mesajlaşacak kimse yok.</div>';
                 return; 
             } 
             
@@ -1512,8 +1512,20 @@
                         `);
                     }
 
-                    // Paylaşım Listesi
-                    shareListDiv.insertAdjacentHTML('beforeend', `<div class="share-contact" onclick="shareWithContact('${uData.username}', '${uImg}', '${rel.followerUid}')"><div class="share-info"><img src="${uImg}"><span>${uData.username}</span></div><button class="share-send-btn">Gönder</button></div>`); 
+                    // --- DÜZELTİLEN KISIM BURASI (PAYLAŞIM LİSTESİ) ---
+                    // onclick içinde ARTIK RESİM YOK. Sadece ('İsim', 'ID') var.
+                    shareListDiv.insertAdjacentHTML('beforeend', `
+                        <div class="share-contact" style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #333;">
+                            <div class="share-info" style="display:flex; align-items:center; gap:10px;">
+                                <img src="${uImg}" style="width:30px; height:30px; border-radius:50%; object-fit:cover;">
+                                <span>${uData.username}</span>
+                            </div>
+                            <button class="share-send-btn" onclick="shareWithContact('${uData.username}', '${rel.followerUid}')" 
+                                    style="background:#24caac; border:none; color:black; padding:5px 15px; border-radius:15px; font-weight:bold; cursor:pointer;">
+                                Gönder
+                            </button>
+                        </div>
+                    `); 
                 } 
             }); 
         }
@@ -1981,37 +1993,63 @@
         }
         window.closeShareModal = () => document.getElementById('shareModal').style.display='none';
         
-        window.shareWithContact = (name, img, uid) => { 
-            let txt = ""; 
-            const el = document.getElementById('content-' + currentPostIdToShare); 
-            if(el) txt = el.innerText; 
-            if(txt.length > 40) txt = txt.substring(0, 40) + "..."; 
-            const roomId = getChatRoomId(currentUserUid, uid); 
-            const postRef = doc(db, "posts", currentPostIdToShare); 
-            getDoc(postRef).then(snap => { 
-                if(snap.exists()) { 
-                    const pData = snap.data(); 
-                    pData.id = snap.id; 
-                    addDoc(collection(db, "chats", roomId, "messages"), { 
-                        isSharedPost: true, 
-                        postData: { 
-                            id: pData.id, 
-                            text: pData.text, 
-                            media: pData.mediaUrl || pData.image, 
-                            type: pData.type, 
-                            owner: pData.username 
-                        }, 
-                        senderId: currentUserUid, 
-                        timestamp: new Date() 
-                    }); 
-                    closeShareModal(); 
-                    showSection('chat'); 
-                    loadChat(name, img, uid); 
-                    setTimeout(() => { 
-                        document.getElementById('chatBox').scrollTop = document.getElementById('chatBox').scrollHeight; 
-                    }, 500); 
+        // --- PAYLAŞILAN GÖNDERİYİ SOHBETE MESAJ OLARAK ATMA ---
+        // --- DÜZELTİLMİŞ PAYLAŞIM FONKSİYONU ---
+        // --- PAYLAŞILAN GÖNDERİYİ SOHBETE MESAJ OLARAK ATMA ---
+        window.shareWithContact = async function(contactName, targetUid) {
+            // Hangi gönderi? (Global değişkenden alıyoruz)
+            if (!currentPostIdToShare) {
+                alert("Hata: Paylaşılacak gönderi seçilmedi.");
+                return;
+            }
+
+            try {
+                // 1. Önce Gönderinin Verilerini Çekelim
+                const postRef = doc(db, "posts", currentPostIdToShare);
+                const postSnap = await getDoc(postRef);
+
+                if (!postSnap.exists()) {
+                    alert("Bu gönderi silinmiş, paylaşılamaz.");
+                    return;
                 }
-            }); 
+
+                const pData = postSnap.data();
+
+                // 2. Sohbet Odası ID'sini Oluştur
+                const currentId = currentUserUid || myUid; 
+                const roomId = [currentId, targetUid].sort().join("_");
+
+                // 3. Mesajı Hazırla ve Gönder
+                await addDoc(collection(db, "chats", roomId, "messages"), {
+                    senderId: currentId,
+                    recipientId: targetUid,
+                    timestamp: serverTimestamp(),
+                    isRead: false,
+                    isSharedPost: true,
+                    postData: {
+                        id: currentPostIdToShare,
+                        owner: pData.username,
+                        userImg: pData.userImg || defaultUserImg,
+                        text: pData.text || "",
+                        media: pData.mediaUrl || pData.image || null,
+                        type: pData.type || 'text'
+                    }
+                });
+
+                // 4. Modalı Kapat ve Bilgi Ver
+                closeShareModal();
+                
+                // Kullanıcıya sor: Sohbete gidelim mi?
+                if (confirm(`${contactName} kişisine gönderildi! Sohbete gitmek ister misin?`)) {
+                     const uDoc = await getDoc(doc(db, "users", targetUid));
+                     const uPhoto = uDoc.exists() ? (uDoc.data().photoURL || defaultUserImg) : defaultUserImg;
+                     loadChat(contactName, uPhoto, targetUid);
+                }
+
+            } catch (error) {
+                console.error("Paylaşım hatası:", error);
+                alert("Mesaj gönderilirken bir hata oluştu.");
+            }
         }
         
         window.userLogout = () => signOut(auth).then(() => location.href = "login.html");
