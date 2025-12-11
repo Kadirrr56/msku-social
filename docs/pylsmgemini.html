@@ -702,6 +702,9 @@
                     console.log("Eksik kullanıcı dökümanı oluşturuldu.");
                 }
 
+                // --- KULLANICIYI ÇEVRİMİÇİ OLARAK İŞARETLE ---
+                await updateDoc(userDocRef, { isOnline: true });
+
                 document.getElementById('userNameDisplay').textContent = myUser.username;
                 
                 const headerImg = document.getElementById('headerProfileImg');
@@ -1136,12 +1139,27 @@
             const feed = document.getElementById('commFeedContainer');
             feed.innerHTML = ''; 
             const q = query(collection(db, "posts"), where("communityId", "==", commId), orderBy("timestamp", "desc"));
-            onSnapshot(q, (snapshot) => {
+            onSnapshot(q, async (snapshot) => {
+                // Gizlenen gönderileri al
+                let hiddenPostIds = new Set();
+                const hiddenQ = query(collection(db, "hiddenPosts"), where("userId", "==", currentUserUid));
+                const hiddenSnap = await getDocs(hiddenQ);
+                hiddenSnap.forEach(doc => {
+                    hiddenPostIds.add(doc.data().postId);
+                });
+
                 if (snapshot.empty && feed.children.length === 0) { feed.innerHTML = '<div class="empty-msg" style="margin-top:20px;">Henüz paylaşım yok.</div>'; return; }
                 snapshot.docChanges().forEach((change) => {
-                    if (change.type === "added") renderSingleCommunityPost(change.doc.id, change.doc.data(), feed);
-                    if (change.type === "modified") updateSingleCommunityPostUI(change.doc.id, change.doc.data());
-                    if (change.type === "removed") { const el = document.getElementById(change.doc.id); if(el) el.remove(); }
+                    const postId = change.doc.id;
+                    // Gizli gönderileri gösterme
+                    if (hiddenPostIds.has(postId)) {
+                        const el = document.getElementById(postId);
+                        if(el) el.remove();
+                        return;
+                    }
+                    if (change.type === "added") renderSingleCommunityPost(postId, change.doc.data(), feed);
+                    if (change.type === "modified") updateSingleCommunityPostUI(postId, change.doc.data());
+                    if (change.type === "removed") { const el = document.getElementById(postId); if(el) el.remove(); }
                 });
             });
         }
@@ -1260,6 +1278,14 @@
 
         // GÜNCELLENMİŞ KEŞFET YÜKLEME (Takip Edilenler Dahil)
         async function loadExploreMixed() { 
+            // 0. Gizlenen gönderileri al
+            let hiddenPostIds = new Set();
+            const hiddenQ = query(collection(db, "hiddenPosts"), where("userId", "==", currentUserUid));
+            const hiddenSnap = await getDocs(hiddenQ);
+            hiddenSnap.forEach(doc => {
+                hiddenPostIds.add(doc.data().postId);
+            });
+
             // 1. Önce Takip Ettiklerimi Bul (Status: 'accepted')
             let friendUids = [];
             if (currentUserUid) {
@@ -1306,8 +1332,8 @@
                     const data = doc.data();
                     data.id = doc.id;
                     data.typeSrc = 'post';
-                    // Sadece medyası olanları keşfete ekle
-                    if ((data.image || data.mediaUrl) && !addedIds.has(data.id)) { 
+                    // Gizli gönderiyi gösterme ve sadece medyası olanları keşfete ekle
+                    if ((data.image || data.mediaUrl) && !addedIds.has(data.id) && !hiddenPostIds.has(data.id)) { 
                         explorePostData.push(data);
                         addedIds.add(data.id);
                     }
@@ -1319,7 +1345,8 @@
                 const data = doc.data();
                 data.id = doc.id;
                 data.typeSrc = 'post';
-                if ((data.image || data.mediaUrl) && !addedIds.has(data.id)) { 
+                // Gizli gönderiyi gösterme
+                if ((data.image || data.mediaUrl) && !addedIds.has(data.id) && !hiddenPostIds.has(data.id)) { 
                     explorePostData.push(data);
                     addedIds.add(data.id);
                 }
@@ -1511,13 +1538,14 @@
                 const userDoc = await getDoc(doc(db, "users", rel.followerUid)); 
                 if(userDoc.exists()) { 
                     const uData = userDoc.data(); 
-                    const uImg = uData.photoURL || defaultUserImg; 
+                    const uImg = uData.photoURL || defaultUserImg;
+                    const onlineStatus = uData.isOnline ? 'Çevrimiçi' : 'Çevrimiçi değil';
                     
                     // Sidebar Takipçi Listesi
                     followersListDiv.insertAdjacentHTML('beforeend', `<div class="friend-row" onclick="goToProfile('${rel.followerUid}')" style="cursor:pointer;"><div class="friend-info"><img src="${uImg}"><span>${uData.username}</span></div><button class="remove-follow-btn" onclick="removeFollower('${docSnap.id}')" style="background:none; border:none; color:#ff4b4b; cursor:pointer;">Çıkar</button></div>`); 
                     
                     // Sidebar Hızlı Mesaj
-                    contactsListDiv.insertAdjacentHTML('beforeend', `<div class="friend-row" onclick="loadChat('${uData.username}', '${uImg}', '${rel.followerUid}')" style="cursor:pointer;"><div class="friend-info"><div style="position:relative;"><img src="${uImg}"><div style="position:absolute;bottom:0;right:0;width:10px;height:10px;background:#24caac;border-radius:50%;"></div></div><div><div style="font-size:14px;">${uData.username}</div><div style="font-size:11px;color:#888;">Çevrimiçi</div></div></div><i class="fa-regular fa-paper-plane" style="color:#666;"></i></div>`); 
+                    contactsListDiv.insertAdjacentHTML('beforeend', `<div class="friend-row" onclick="loadChat('${uData.username}', '${uImg}', '${rel.followerUid}')" style="cursor:pointer;"><div class="friend-info"><div style="position:relative;"><img src="${uImg}"><div style="position:absolute;bottom:0;right:0;width:10px;height:10px;background:#24caac;border-radius:50%;"></div></div><div style="font-size:14px;">${uData.username}</div></div><i class="fa-regular fa-paper-plane" style="color:#666;"></i></div>`); 
                     
                     // Mobil Chat Listesi
                     if(mobileContactsDiv) {
@@ -1531,8 +1559,7 @@
                                 <div class="friend-info">
                                     <img src="${uImg}" style="width:45px; height:45px;">
                                     <div>
-                                        <div style="font-size:15px; font-weight:bold; color:white;">${uData.username}</div>
-                                        <div style="font-size:12px; color:#aaa;">Sohbeti başlatmak için dokun</div>
+                                        <div style="font-size:15px; font-weight:bold; color:white;">${uData.username} <span style="font-size:12px; color:#aaa;">${onlineStatus}</span></div>
                                     </div>
                                 </div>
                                 <i class="fa-solid fa-chevron-right" style="color:#24caac;"></i>
@@ -1571,6 +1598,16 @@
             
             nameEl.innerText = name; 
             imgEl.src = imgUrl; 
+
+            // --- KULLANICIYU ÇEVRİMİÇİ DURUMUNU BAŞLIĞA EKLE ---
+            (async () => {
+                const userDoc = await getDoc(doc(db, "users", targetUid));
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    const onlineStatus = userData.isOnline ? ' 🟢 Çevrimiçi' : ' ⚫ Çevrimiçi değil';
+                    nameEl.innerText = name + onlineStatus;
+                }
+            })();
 
             // --- YENİ: BAŞLIĞA TIKLAYINCA PROFİLE GİT ---
             const goToProfile = () => {
@@ -1758,7 +1795,15 @@
         async function loadTimeline() { 
             const feed = document.getElementById('feedContainer'); 
             
-            // 1. Adım: Takip ettiğim kişilerin listesini al (Status: 'accepted' olanlar)
+            // 1. Adım: Gizlenen gönderileri al
+            let hiddenPostIds = new Set();
+            const hiddenQ = query(collection(db, "hiddenPosts"), where("userId", "==", currentUserUid));
+            const hiddenSnap = await getDocs(hiddenQ);
+            hiddenSnap.forEach(doc => {
+                hiddenPostIds.add(doc.data().postId);
+            });
+
+            // 2. Adım: Takip ettiğim kişilerin listesini al (Status: 'accepted' olanlar)
             const qRel = query(
                 collection(db, "relationships"), 
                 where("followerUid", "==", currentUserUid),
@@ -1775,7 +1820,7 @@
                 allowedUids.push(doc.data().followingUid);
             });
 
-            // 2. Adım: Gönderileri Çek ve Filtrele
+            // 3. Adım: Gönderileri Çek ve Filtrele
             // Not: Firestore 'IN' sorgusu 30 ile sınırlı olduğu için client-side filtreleme yapıyoruz.
             const qPosts = query(collection(db, "posts"), orderBy("timestamp", "desc"), limit(50)); 
             
@@ -1792,7 +1837,12 @@
                 snapshot.forEach(doc => { 
                     const post = doc.data();
                     
-                    // --- İŞTE SİHİRLİ KISIM ---
+                    // --- SİHİRLİ KISIM: Gönderiyi gösterilip gösterilmeyeceğini kontrol et ---
+                    // Eğer gönderi gizli listede varsa gösterme
+                    if (hiddenPostIds.has(doc.id)) {
+                        return;
+                    }
+                    
                     // Eğer gönderiyi atan kişi (post.uid), benim izinli listem (allowedUids) içindeyse göster
                     if (allowedUids.includes(post.uid)) {
                         createPostHTML(doc.id, post);
@@ -1828,7 +1878,7 @@
             if (auth.currentUser && post.uid === auth.currentUser.uid) { 
                 menuOptions = `<div class="option-item" onclick="editGlobalPost('${postId}', '${post.text.replace(/'/g, "\\'")}')">Düzenle</div><div class="option-item danger" onclick="deleteGlobalPost('${postId}')">Sil</div>`; 
             } else { 
-                menuOptions = `<div class="option-item" onclick="openReportModal('${postId}')">Bildir</div><div class="option-item" onclick="document.getElementById('${postId}').style.display='none'">Gizle</div>`; 
+                menuOptions = `<div class="option-item" onclick="openReportModal('${postId}')">Bildir</div><div class="option-item" onclick="hideGlobalPost('${postId}')">Gizle</div>`; 
             }
             
             const liked = (post.likedBy && post.likedBy.includes(auth.currentUser.uid)); 
@@ -1915,6 +1965,26 @@
             if(confirm("Silmek istediğine emin misin?")) { 
                 await deleteDoc(doc(db, "posts", id)); 
             } 
+        }
+
+        window.hideGlobalPost = async function(postId) {
+            try {
+                // Gizlenen gönderiyi kaydet
+                await addDoc(collection(db, "hiddenPosts"), {
+                    userId: currentUserUid,
+                    postId: postId,
+                    timestamp: serverTimestamp()
+                });
+                
+                const post = document.getElementById(postId);
+                if (post) {
+                    post.style.display = 'none';
+                    alert("Gönderi gizlendi.");
+                }
+            } catch (error) {
+                console.error("Gizleme hatası:", error);
+                alert("Gönderi gizlenemedi.");
+            }
         }
         
         window.filterUsers = async () => { 
@@ -2302,6 +2372,17 @@
                 }
             }
         }
+
+        // --- SAYFAYI KAPATIRKEN ÇEVRIMIÇI DURUMUNU GÜNCELLE ---
+        window.addEventListener('beforeunload', async () => {
+            if (currentUserUid) {
+                try {
+                    await updateDoc(doc(db, "users", currentUserUid), { isOnline: false });
+                } catch(e) {
+                    console.log("Online durumu güncellenemedi:", e);
+                }
+            }
+        });
         
     </script>
 </body>
