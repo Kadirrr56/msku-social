@@ -6,6 +6,15 @@
     <title>Kullanıcı Profili - Just MSKU</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script type="text/javascript">
+       (function(){
+          // BURAYA KENDİ PUBLIC KEY'İNİ YAZ (pylsmgemini.html'deki ile aynı)
+          emailjs.init("CYIIX3kfQyoPUedSP");
+       })();
+    </script>
+
     <style>
         /* --- GENEL AYARLAR --- */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Montserrat', sans-serif; }
@@ -49,8 +58,9 @@
 
         /* GÖNDERİLER */
         .section-title { color: #24caac; margin-bottom: 20px; padding-left: 10px; border-left: 4px solid #24caac; font-size: 16px; }
-        .feed-post { background: #1a1a1a; border-radius: 15px; padding: 15px; margin-bottom: 20px; border: 1px solid #333; }
-        .post-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .feed-post { background: #1a1a1a; border-radius: 15px; padding: 15px; margin-bottom: 20px; border: 1px solid #333; position: relative;}
+        .post-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+        .user-info-group { display: flex; align-items: center; gap: 10px; }
         .post-header img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
         .post-content { margin-bottom: 15px; line-height: 1.5; font-size: 15px; }
         .post-image { width: 100%; border-radius: 10px; margin-top: 10px; border: 1px solid #333; max-height: 400px; object-fit: cover; }
@@ -58,6 +68,14 @@
         .action-btn { cursor: pointer; display: flex; align-items: center; gap: 5px; font-size: 13px; }
         .action-btn:hover { color: #24caac; }
         .action-btn.liked { color: #ff4b4b; }
+
+        /* MENÜLER (BİLDİR İÇİN) */
+        .post-options { position: relative; }
+        .options-btn { background: none; border: none; color: #888; cursor: pointer; font-size: 18px; padding: 5px; }
+        .options-menu { display: none; position: absolute; top: 30px; right: 0; background: #222; border: 1px solid #444; border-radius: 8px; width: 120px; z-index: 10; overflow: hidden; flex-direction: column; }
+        .options-menu.active { display: flex; }
+        .option-item { padding: 10px 15px; color: #ccc; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: 0.2s; text-decoration: none; }
+        .option-item:hover { background: #333; color: #fff; }
 
         .private-msg { text-align: center; color: #888; padding: 40px; background: #111; border-radius: 10px; border: 1px solid #333; margin-top: 20px;}
         .private-msg i { font-size: 40px; margin-bottom: 10px; display: block; }
@@ -75,7 +93,8 @@
         .share-info { display: flex; align-items: center; gap: 10px; }
         .share-info img { width: 30px; height: 30px; border-radius: 50%; }
         .user-list-btn { background: #333; border: 1px solid #555; color: #fff; padding: 5px 15px; border-radius: 15px; cursor: pointer; font-size: 12px; }
-
+        .modal-buttons { display: flex; gap: 10px; justify-content: center; margin-top: 15px; }
+        .modal-btn { padding: 10px 20px; border-radius: 5px; border: none; cursor: pointer; font-weight: bold; }
 
         /* MOBİL UYUMLULUK */
         @media (max-width: 768px) {
@@ -99,9 +118,7 @@
     <div class="container">
         <div class="profile-card">
             <img id="uImg" src="" class="avatar-circle">
-            
             <div id="uName" class="user-name">Yükleniyor...</div>
-            
             <div class="user-title">MSKU</div>
             <div id="uEmail" class="user-email">...</div>
             <div id="uBio" class="bio-text">...</div>
@@ -158,6 +175,17 @@
         </div>
     </div>
 
+    <div id="reportModal" class="modal">
+        <div class="modal-content">
+            <h3 style="color:#24caac; margin-bottom:15px;">Şikayet Et</h3>
+            <textarea id="reportReason" placeholder="Şikayet sebebiniz nedir?" style="width:100%; height:100px; background:#333; color:white; border:1px solid #444; padding:10px; border-radius:5px; outline:none; resize:none; margin-bottom:15px;"></textarea>
+            <div class="modal-buttons">
+                <button class="modal-btn" style="background:#444; color:white;" onclick="closeReportModal()">İptal</button>
+                <button class="modal-btn" style="background:#24caac; color:black;" onclick="submitReport()">Gönder</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
@@ -177,6 +205,7 @@
         const db = getFirestore(app);
 
         let myUid = null;
+        let myUsername = null; // Şikayet için gerekli
         let targetUid = null;
         let isFollowing = false;
         let relationshipId = null;
@@ -191,6 +220,12 @@
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 myUid = user.uid;
+                // BENİM KULLANICI BİLGİLERİMİ ÇEK (ŞİKAYET İÇİN)
+                const meDoc = await getDoc(doc(db, "users", myUid));
+                if(meDoc.exists()) {
+                    myUsername = meDoc.data().username;
+                }
+
                 if(!targetUid) { alert("Kullanıcı belirtilmedi!"); window.location.href='pylsmgemini.html'; return; }
                 if(myUid === targetUid) { window.location.href='profil.html'; return; } 
 
@@ -211,8 +246,6 @@
             document.getElementById('uName').innerText = targetUserData.username;
             document.getElementById('uImg').src = targetUserData.photoURL || defaultAvatar;
             document.getElementById('uBio').innerText = targetUserData.bio || "Biyografi yok.";
-
-            // MAİL ADRESİNİ YAZDIR
             document.getElementById('uEmail').innerText = targetUserData.email || "";
 
             // Takip Durumunu Kontrol Et
@@ -318,6 +351,16 @@
             const likeClass = isLiked ? 'liked' : '';
             const heartIcon = isLiked ? 'fa-solid' : 'fa-regular';
 
+            // ŞİKAYET BUTONU EKLENDİ
+            const menuHtml = `
+                <div class="post-options">
+                    <button class="options-btn" onclick="toggleMenu('menu-${postId}')"><i class="fa-solid fa-ellipsis"></i></button>
+                    <div id="menu-${postId}" class="options-menu">
+                        <div class="option-item" onclick="openReportModal('${postId}')">Bildir</div>
+                    </div>
+                </div>
+            `;
+
             const html = `
                 <div class="feed-post" id="${postId}">
                     <div class="post-header">
@@ -325,6 +368,7 @@
                             <img src="${targetUserData.photoURL || defaultAvatar}">
                             <div><strong>${targetUserData.username}</strong><div style="font-size:12px;color:#888;">${dateStr}</div></div>
                         </div>
+                        ${menuHtml}
                     </div>
                     <div class="post-content">${post.text}</div>
                     ${mediaHTML}
@@ -421,6 +465,80 @@
             loadComments(postId); 
         }
 
+        // --- ŞİKAYET SİSTEMİ (YENİ EKLENDİ) ---
+        let currentReportPostId = null;
+        window.openReportModal = (id) => {
+            currentReportPostId = id;
+            document.getElementById('reportModal').style.display='flex';
+            // Menüyü kapat
+            document.querySelectorAll('.options-menu').forEach(m => m.classList.remove('active'));
+        }
+        window.closeReportModal = () => {
+            document.getElementById('reportModal').style.display='none';
+            currentReportPostId = null;
+        }
+
+        window.submitReport = async () => {
+            const reason = document.getElementById('reportReason').value.trim();
+            if(!reason) return alert("Lütfen bir sebep yazınız.");
+            
+            const btn = document.querySelector('#reportModal .modal-buttons button:last-child');
+            btn.innerText = "Gönderiliyor...";
+            btn.disabled = true;
+
+            try {
+                // Gönderi detaylarını çek
+                const postRef = doc(db, "posts", currentReportPostId);
+                const postSnap = await getDoc(postRef);
+                
+                let postOwner = "Bilinmiyor";
+                let postContent = "İçerik Yok/Medya";
+
+                if (postSnap.exists()) {
+                    const p = postSnap.data();
+                    postOwner = p.username;
+                    postContent = p.text ? p.text.substring(0, 50) + "..." : "Sadece Görsel/Video";
+                }
+
+                // Direkt Link
+                const baseUrl = window.location.href.split('takip.html')[0] + 'pylsmgemini.html'; // Ana sayfa linkini baz al
+                const postLink = `${baseUrl}?openPost=${currentReportPostId}`;
+
+                // Firestore'a kaydet
+                await addDoc(collection(db, "reports"), {
+                    postId: currentReportPostId,
+                    reason: reason,
+                    reportedBy: myUid,
+                    reporterName: myUsername || "Bilinmeyen Kullanıcı",
+                    timestamp: serverTimestamp()
+                });
+
+                // EmailJS Gönderimi
+                const templateParams = {
+                    reporter_name: myUsername || "Bilinmeyen",
+                    reason: reason,
+                    post_id: currentReportPostId,
+                    post_owner: postOwner,
+                    post_content: postContent,
+                    post_link: postLink
+                };
+
+                // BURADAKİ ID'LER pylsmgemini.html İLE AYNIDIR
+                await emailjs.send('service_7an2b0g', 'template_afv7n7t', templateParams);
+
+                alert("Bildiriminiz yöneticiye iletildi.");
+                closeReportModal();
+
+            } catch (error) {
+                console.error("Rapor hatası:", error);
+                alert("Rapor kaydedildi ancak mail sunucusunda hata oluştu.");
+                closeReportModal();
+            } finally {
+                btn.innerText = "Gönder";
+                btn.disabled = false;
+            }
+        }
+
         // --- PAYLAŞIM (DÜZELTİLMİŞ) ---
         let currentPostIdToShare = null;
         window.openShareModal = (postId) => {
@@ -434,7 +552,6 @@
             const list = document.getElementById('shareModalList');
             list.innerHTML = '<div style="text-align:center; color:#888;">Yükleniyor...</div>';
             
-            // Ben kimi takip ediyorum?
             const q = query(collection(db, "relationships"), where("followerUid", "==", myUid), where("status", "==", "accepted"));
             const snap = await getDocs(q);
             
@@ -447,9 +564,8 @@
                 if(uDoc.exists()) {
                     const u = uDoc.data();
                     const uImg = u.photoURL || defaultAvatar;
-                    // BUTON DÜZELTİLDİ: ID parametresi eklendi
                     list.innerHTML += `
-                        <div class="share-contact" style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #333;">
+                        <div class="share-contact" style="display:flex; justify-content:space-between; align-items:center; padding:10px; background:#222; margin-bottom:5px; border-radius:8px;">
                             <div class="share-info" style="display:flex; align-items:center; gap:10px;">
                                 <img src="${uImg}" style="width:35px; height:35px; border-radius:50%; object-fit:cover;">
                                 <span>${u.username}</span>
@@ -462,26 +578,16 @@
             });
         }
 
-        // --- DÜZELTİLMİŞ PAYLAŞIM FONKSİYONU ---
         window.shareWithContact = async function(contactName, targetUid) {
-            if (!currentPostIdToShare) {
-                 alert("Hata: Gönderi seçilemedi.");
-                 return;
-            }
+            if (!currentPostIdToShare) { alert("Hata: Gönderi seçilemedi."); return; }
 
             try {
-                // A) Gönderi verisini çek
                 const pDoc = await getDoc(doc(db, "posts", currentPostIdToShare));
-                if (!pDoc.exists()) {
-                    alert("Hata: Gönderi bulunamadı.");
-                    return;
-                }
+                if (!pDoc.exists()) { alert("Hata: Gönderi bulunamadı."); return; }
                 const pData = pDoc.data();
 
-                // B) Sohbet Odası ID'sini Oluştur
                 const roomId = [myUid, targetUid].sort().join("_");
 
-                // C) Mesaj Olarak Kaydet (Veritabanına Yazma)
                 await addDoc(collection(db, "chats", roomId, "messages"), {
                     senderId: myUid,
                     recipientId: targetUid,
@@ -574,8 +680,15 @@
             else { btn.innerText = "Takip Et"; btn.style.background = "#24caac"; btn.style.color = "#000"; btn.style.border = "none"; }
         }
 
+        window.toggleMenu = (id) => document.getElementById(id).classList.toggle('active');
         window.goToChat = function() { window.location.href = `pylsmgemini.html?chatUser=${targetUid}`; }
-        window.onclick = (e) => { if(e.target.id === 'shareModal') closeShareModal(); }
+        window.onclick = (e) => { 
+            if(e.target.id === 'shareModal') closeShareModal();
+            if(e.target.id === 'reportModal') closeReportModal();
+            if(!e.target.closest('.options-btn') && !e.target.closest('.options-menu')) {
+                document.querySelectorAll('.options-menu').forEach(m => m.classList.remove('active'));
+            }
+        }
     </script>
 </body>
 </html>
